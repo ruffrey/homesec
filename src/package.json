@@ -1,0 +1,24 @@
+{
+  "name": "homesec",
+  "version": "0.0.1",
+  "description": "home security app",
+  "main": "index.html",
+  "dependencies": {
+    "moment": "^2.8.1"
+  },
+  "window": {
+    "title": "security",
+    "toolbar": true,
+    "frame": true,
+    "width": 1000,
+    "height": 700,
+    "position": "center",
+    "min_width": 400,
+    "min_height": 200,
+    "max_width": 1300,
+    "max_height": 700
+  },
+  "webkit": {
+    "plugin": true
+  }
+}

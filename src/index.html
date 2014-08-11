@@ -1,0 +1,224 @@
+<!doctype html>
+<html ng-app>
+	<head>
+		<link rel="stylesheet" type="text/css" href="bootstrap.css">
+		<link rel="stylesheet" type="text/css" href="style.css" />
+		<script src="angular.js"></script>
+		<script>
+		var fs = require('fs');
+		var moment = require('moment');
+		var Imagemin = require('imagemin');
+
+
+		var ctx;
+		var canvas;
+		var localMediaStream;
+		var video;
+		var sources;
+
+		var constraints = {
+			video: {
+				mandatory: {
+			      	minWidth: 1920,
+			      	minHeight: 1080
+			    },
+			    optional: []
+			}
+		}
+
+		function init(callback) {
+			MediaStreamTrack.getSources(function (src) {
+        		sources = [];
+        		src.forEach(function (s) {
+        			if (s.kind === 'video') {
+        				sources.push(s);
+        			}
+        		});
+        		constraints.video.optional.push({sourceId: localStorage.sourceId || src[0].id});
+
+        		video = document.getElementById('vid');
+				canvas = document.getElementById('can');
+        		navigator.webkitGetUserMedia(constraints, function (stream) {
+					video.src = window.URL.createObjectURL(stream);
+					localMediaStream = stream;
+					callback(null);
+				}, function (err) {
+					console.error(err);
+					callback(err);
+				});
+		    });
+		}
+
+		function snapshot(saveFilePath, callback) {
+			if (localMediaStream) {
+				// draw the image onto the canvas first
+				canvas.height = video.videoHeight;
+				canvas.width = video.videoWidth;
+				ctx = canvas.getContext('2d');
+			  	ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+
+			  	// process the data
+				var canvasData = canvas.toDataURL('image/png');
+				var imageText = canvasData.split(',')[1]; // split off the beginning metadata
+			  	var imageBuffer = new Buffer(imageText, 'base64');
+			  	
+			  	// save it to the file system
+			  	fs.writeFile(saveFilePath, imageBuffer, {encoding: 'base64'}, function (err) {
+			  		if (err) {
+			  			return callback(err, null);
+			  		}
+
+		  			// compress the image and write it over itself
+		  			var imagemin = new Imagemin()
+					    .src(saveFilePath)
+					    .dest(saveFilePath)
+					    .use(Imagemin.pngquant());
+
+					imagemin.optimize(function (err, file) {
+					    if (err) {
+					    	return callback(err, file);
+					    }
+				    	// set it as the thumbnail
+					  	document.getElementById('img').src = canvasData;
+	  					callback(null, saveFilePath);
+					});
+
+			  	});
+			}
+		} 
+
+
+		function MainController($scope) {
+			$scope.snapInterval = localStorage.snapInterval ? parseFloat(localStorage.snapInterval) : 3000;
+			$scope.autosnapEnabled = localStorage.autosnapEnabled === 'true' ? true : false;
+
+			var snapLooper = function () {
+				console.log('Autosnap', $scope.autosnapEnabled);
+				if ($scope.autosnapEnabled) {
+					$scope.snap();
+				}
+				setTimeout(snapLooper, $scope.snapInterval);
+			};
+
+			init(function (err) {
+				if (err) {
+					$scope.errMessage = err;
+					return;
+				}
+				$scope.sources = sources;
+				$scope.$apply();
+			});
+			var DEFAULT_DATE = "YYYYMMDD HH.mm.ss.SSS";
+
+			$scope.dateFormat = localStorage.dateFormat || DEFAULT_DATE;
+			$scope.saveFolder = localStorage.saveFolder || "/Users/jpx/Downloads";
+			$scope.errMessage = "";
+			$scope.message = "";
+			$scope.sourceId = localStorage.sourceId || null;
+
+			$scope.sources = []; // reference
+
+			$scope.snap = function () {
+				$scope.message = "";
+				$scope.errMessage = "";
+				var saveFilePath = $scope.saveFolder + '/' + moment().format($scope.dateFormat) + '.png';
+				snapshot(saveFilePath, function (err, filepath) {
+					if (err) {
+						$scope.errMessage = err;
+					}
+					else {
+						$scope.message = "Saved to " + filepath;
+					}
+					$scope.$apply();
+				});
+			};
+
+			$scope.saveDateFormat = function () {
+				localStorage.dateFormat = $scope.dateFormat || DEFAULT_DATE;
+				$scope.message = "Filename format changed to " + $scope.dateFormat;
+			};
+			$scope.saveSaveFolder = function () {
+				localStorage.saveFolder = $scope.saveFolder;
+				$scope.message = "Save folder changed to " + $scope.saveFolder;
+			};
+			$scope.saveSnapInterval = function () {
+				localStorage.snapInterval = $scope.snapInterval;
+				$scope.message = "Snap interval changed to " + $scope.snapInterval;
+			};
+			$scope.saveSnapEnabled = function () {
+				localStorage.autosnapEnabled = $scope.autosnapEnabled;
+				$scope.message = "Autosnap changed to " + $scope.autosnapEnabled;
+			};
+			$scope.setSource = function () {
+				localStorage.sourceId = $scope.sourceId;
+				window.location.reload();
+			};
+
+
+
+			snapLooper();
+		}
+		</script>
+	</head>
+	<body>
+		<div ng-controller="MainController" class="container">
+			<div class="row">
+				<div class="col-sm-4">
+					<label>Save files to folder (no trailing slash)</label>
+					<input class="form-control" type="text" ng-model="saveFolder" ng-change="saveSaveFolder()" value="" />
+				</div>
+				<div class="col-sm-4">
+					<label>File format 
+						(see 
+						<a href="http://momentjs.com/docs/#/displaying/" 
+							target="_blank">moment.js</a>)
+					</label>
+					<input class="form-control" type="text" ng-model="dateFormat" ng-change="saveDateFormat()" value="" />
+				</div>
+				<div class="col-sm-4">
+					<label>video source</label>
+					<select class="form-control" ng-model="sourceId" ng-change="setSource()">
+						<option ng-repeat="source in sources" 
+							ng-selected="source.id === sourceId"
+							value="{{source.id}}"> {{ source.label }} </option>
+					</select>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-4">
+					<label>Automatically capture (autosnap)
+						<input class="form-control" type="checkbox" ng-model="autosnapEnabled" 
+							ng-change="saveSnapEnabled()" value="" />
+					</label>
+				</div>
+				<div class="col-sm-4">
+					<label>Autosnap interval (miliseconds)</label>
+					<input class="form-control" type="text" ng-model="snapInterval" 
+						ng-change="saveSnapInterval()" value="" />
+				</div>
+				<div class="col-sm-4">
+					
+				</div>
+			</div>
+			
+			<hr />
+
+			<div ng-show="errMessage" class="alert alert-danger">{{ errMessage }}</div>
+			<div ng-show="message" class="alert alert-info">{{ message }}</div>
+
+			<div class="row">
+				<div class="col-sm-6">
+					<video ng-click="snap()" class="img-responsive" id="vid" autoplay></video>
+				</div>
+				<div class="col-sm-3">
+					<img id="img" class="img-responsive img-thumbnail" src="">
+				</div>
+				<div class="col-sm-3">
+					
+				</div>
+			</div>
+			
+			<canvas id="can"></canvas>
+		</div>
+	</body>
+</html>
