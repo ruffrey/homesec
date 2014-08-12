@@ -317,13 +317,13 @@
 
 					<br />
 					<br />
-					<br />
-					<br />
 					<button class="btn btn-default btn-sm" ng-class="{active:preview}" ng-click="preview = !preview">
-						preview
+						Camera Preview
 					</button>
+					<br />
+					<br />
 					<button class="btn btn-default btn-sm" ng-class="{active:settings}" ng-click="settings = !settings">
-						advanced settings
+						Advanced Settings
 					</button>
 				</div>
 				<div class="col-sm-8">
@@ -337,11 +337,11 @@
 
 					<label>
 						Save folder
-						<span class="help-inline">{{ folderSize }}</span>
 					</label>
 					<input class="form-control" type="text" ng-model="saveFolder" 
 						ng-blur="checkFolderSize()"
 						ng-change="saveSaveFolder()" value="" />
+					<span class="help-block">{{ folderSize }}</span>
 				</div>
 				
 			</div>
@@ -383,14 +383,14 @@
 				<div class="col-sm-8">
 					<span class="help-block">Turn off preview to save energy.</span>
 					<video ng-click="snap()" class="img-responsive" id="vid" autoplay></video>
+					<br />
+					<br />
 				</div>
 				<div class="col-sm-4">
-					<label>Last photo</label>
-					<img id="img" class="img-responsive img-thumbnail" src="">
+					<span class="help-block">Last photo</span>
+					<br />
+					<img id="img" class="img-responsive img-rounded" src="">
 				</div>
-				<br />
-				<br />
-				<br />
 			</div>
 			
 			<canvas id="can"></canvas>
