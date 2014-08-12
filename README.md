@@ -1,9 +1,10 @@
 # Use your webcam as a security cam
 
-[Wiki](https://github.com/ruffrey/homesec/wiki)
+### Muggles:
 
+[Get started by reading the wiki](https://github.com/ruffrey/homesec/wiki)
 
-### Development
+### Developers:
 
 Requires [grunt](http://gruntjs.com) and [Node](http://nodejs.org).
 
@@ -15,9 +16,6 @@ Building the app:
 	grunt
 
 Look in the build folder and you'll have apps for mac, windows, and linux. Tweak settings in `Gruntfile.js` and `src/package.json`, if you like.
-
-
-The settings will be saved when you open and close it.
 
 ### Coming Soon
 
