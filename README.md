@@ -1,6 +1,6 @@
 # Use your webcam as a security cam
 
-[Wiki](/ruffrey/homesec/wiki)
+[Wiki](https://github.com/ruffrey/homesec/wiki)
 
 
 ### Development
