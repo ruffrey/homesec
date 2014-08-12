@@ -1,6 +1,5 @@
 'use strict';
 exports = module.exports = function (grunt) {
-	grunt.loadNpmTasks('grunt-browserify');
 	grunt.loadNpmTasks('grunt-node-webkit-builder');
 	grunt.initConfig({
 	  	nodewebkit: {
