@@ -9,4 +9,10 @@ Building the app:
 	npm install
 	grunt
 
-Look in the build folder and you'll have apps for mac, windows, and linux.
+Look in the build folder and you'll have apps for mac, windows, and linux. Run this app as a daemon or service. 
+
+The settings will be saved when you open and close it.
+
+### Coming Soon
+
+Remote monitoring - log into a website and see your video feeds.

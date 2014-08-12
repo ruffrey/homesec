@@ -1,17 +1,18 @@
 {
-  "name": "homesec",
-  "version": "0.0.1",
-  "description": "home security app",
+  "name": "Homesec",
+  "version": "0.0.2",
+  "description": "Home security app",
   "main": "index.html",
   "dependencies": {
-    "moment": "^2.8.1"
+    "moment": "^2.8.1",
+    "async": "^0.9.0"
   },
   "window": {
-    "title": "security",
+    "title": "Homesec",
     "toolbar": true,
     "frame": true,
     "width": 1000,
-    "height": 700,
+    "height": 520,
     "position": "center",
     "min_width": 400,
     "min_height": 200,

@@ -1,13 +1,17 @@
 <!doctype html>
 <html ng-app>
 	<head>
-		<link rel="stylesheet" type="text/css" href="bootstrap.css">
-		<link rel="stylesheet" type="text/css" href="style.css" />
-		<script src="angular.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/animate.css" />
+		<link rel="stylesheet" type="text/css" href="css/bootstrap.css" />
+		<link rel="stylesheet" type="text/css" href="css/font-awesome.min.css" />
+		<link rel="stylesheet" type="text/css" href="css/style.css" />
+		<script src="js/angular.js"></script>
 		<script>
 		var fs = require('fs');
 		var moment = require('moment');
 		var Imagemin = require('imagemin');
+		var path = require('path');
+	    var async = require('async');
 
 
 		var ctx;
@@ -49,7 +53,7 @@
 		    });
 		}
 
-		function snapshot(saveFilePath, callback) {
+		function snapshot(saveFilePath, doTimestamp, callback) {
 			if (localMediaStream) {
 				// draw the image onto the canvas first
 				canvas.height = video.videoHeight;
@@ -57,6 +61,12 @@
 				ctx = canvas.getContext('2d');
 			  	ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 
+			  	if (doTimestamp) {
+			  		ctx.fillStyle = "#ffffff";
+					ctx.font = "14px Tahoma";
+				  	ctx.fillText(moment().format('llll'), 10, 20);
+			  	}
+			  	
 			  	// process the data
 				var canvasData = canvas.toDataURL('image/png');
 				var imageText = canvasData.split(',')[1]; // split off the beginning metadata
@@ -89,7 +99,45 @@
 
 
 		function MainController($scope) {
-			$scope.snapInterval = localStorage.snapInterval ? parseFloat(localStorage.snapInterval) : 3000;
+
+			init(function (err) {
+				if (err) {
+					$scope.errMessage = err;
+					return;
+				}
+				$scope.sources = sources;
+				$scope.$apply();
+			});
+
+			// Settings
+			var DEFAULT_DATE = "YYYYMMDD HH.mm.ss.SSS";
+
+			$scope.dateFormat = localStorage.dateFormat || DEFAULT_DATE;
+			$scope.saveFolder = localStorage.saveFolder || "/Users/jpx/Downloads";
+			$scope.errMessage = "";
+			$scope.message = "";
+			$scope.sourceId = localStorage.sourceId || null;
+			$scope.enableTimestamp = localStorage.enableTimestamp === 'true' ? true : false;
+			$scope.folderSize = "";
+			$scope.maxFolderBytes = localStorage.maxFolderBytes ? parseFloat(localStorage.maxFolderBytes) : 1024 * 1024 * 1024 * 20; // 20gb
+			$scope.proposedGb = ($scope.maxFolderBytes / 1024 / 1024 / 1024).toFixed(2);
+
+			function getReadableSize(inputBytes) {
+				var outText = "";
+				var mb = 1024 * 1024;
+				var gb = mb * 1024;
+				if (inputBytes < gb) {
+					outText = (inputBytes / mb).toFixed(2) + "mb";
+				}
+				else {
+					outText = (inputBytes / gb).toFixed(2) + "gb";
+				}
+				return outText;
+			}
+
+			$scope.sources = []; // reference
+
+			$scope.snapInterval = localStorage.snapInterval ? parseFloat(localStorage.snapInterval) : 5000;
 			$scope.autosnapEnabled = localStorage.autosnapEnabled === 'true' ? true : false;
 
 			var snapLooper = function () {
@@ -100,36 +148,65 @@
 				setTimeout(snapLooper, $scope.snapInterval);
 			};
 
-			init(function (err) {
-				if (err) {
-					$scope.errMessage = err;
-					return;
+			$scope.checkFolderSize = function () {
+				$scope.errMessage = "";
+
+				// a bit of validation - dont let it end in trailing slash
+				if ($scope.saveFolder[$scope.saveFolder.length - 1] === "/" && $scope.saveFolder.length > 1) {
+					$scope.saveFolder = $scope.saveFolder.substring(0, $scope.saveFolder.length - 1);
+					$scope.saveSaveFolder();
 				}
-				$scope.sources = sources;
-				$scope.$apply();
-			});
-			var DEFAULT_DATE = "YYYYMMDD HH.mm.ss.SSS";
 
-			$scope.dateFormat = localStorage.dateFormat || DEFAULT_DATE;
-			$scope.saveFolder = localStorage.saveFolder || "/Users/jpx/Downloads";
-			$scope.errMessage = "";
-			$scope.message = "";
-			$scope.sourceId = localStorage.sourceId || null;
+				readSizeRecursive($scope.saveFolder, function (err, bytes) {
+					if (err) {
+						$scope.errMessage = err;
+						$scope.$apply();
+						return;
+					}
 
-			$scope.sources = []; // reference
+					var files = fs.readdirSync($scope.saveFolder);
+
+					files.sort(function (a, b) {
+						if (a < b) return 1;
+						if (a > b) return -1;
+						return 1;
+					});
+					
+					// remove the eldest files while there are too many bytes
+					while (files.length && bytes > $scope.maxFolderBytes) {
+						try {
+							var file = $scope.saveFolder + "/" + files.pop();
+							if (file[0] === '.') continue;
+
+							var fileBytes = fs.lstatSync(file).size;
+							bytes -= fileBytes;
+							fs.unlinkSync(file);
+						}
+						catch (ex) {
+							$scope.errMessage = ex;
+							console.error(ex.stack);
+							$scope.$apply();
+							return;
+						}
+					}
+
+					$scope.folderSize = getReadableSize(bytes);
+					$scope.$apply();
+				});
+			};
 
 			$scope.snap = function () {
 				$scope.message = "";
 				$scope.errMessage = "";
 				var saveFilePath = $scope.saveFolder + '/' + moment().format($scope.dateFormat) + '.png';
-				snapshot(saveFilePath, function (err, filepath) {
+				snapshot(saveFilePath, $scope.enableTimestamp, function (err, filepath) {
 					if (err) {
 						$scope.errMessage = err;
 					}
 					else {
 						$scope.message = "Saved to " + filepath;
 					}
-					$scope.$apply();
+					$scope.checkFolderSize();
 				});
 			};
 
@@ -145,27 +222,144 @@
 				localStorage.snapInterval = $scope.snapInterval;
 				$scope.message = "Snap interval changed to " + $scope.snapInterval;
 			};
-			$scope.saveSnapEnabled = function () {
+			$scope.toggleSnapEnabled = function () {
+				$scope.autosnapEnabled = !$scope.autosnapEnabled;
 				localStorage.autosnapEnabled = $scope.autosnapEnabled;
 				$scope.message = "Autosnap changed to " + $scope.autosnapEnabled;
 			};
+			$scope.saveEnableTimestamp = function () {
+				localStorage.enableTimestamp = $scope.enableTimestamp;
+				$scope.message = "Image timestamp changed to " + $scope.enableTimestamp;
+			};
+			$scope.saveMaxFolderBytes = function () {
+				// $scope.proposedGb
+				if (isNaN($scope.proposedGb)) {
+					$scope.errMessage = "Invalid max gigabytes - must be a number.";
+					return;
+				}
+				
+				$scope.errMessage = "";
+				$scope.maxFolderBytes = parseFloat($scope.proposedGb) * 1024 * 1024 * 1024;
+				localStorage.maxFolderBytes = $scope.maxFolderBytes;
+				$scope.message = "Set max image folder size to " + $scope.proposedGb;
+			};
+
+
 			$scope.setSource = function () {
 				localStorage.sourceId = $scope.sourceId;
 				window.location.reload();
 			};
-
+			
 
 
 			snapLooper();
+			$scope.checkFolderSize();
 		}
+
+
+		function readSizeRecursive(item, cb) {
+		  fs.lstat(item, function (err, stats) {
+		  	if (err) return cb(err);
+
+		    var total = stats.size;
+
+		    if (!err && stats.isDirectory()) {
+		      fs.readdir(item, function(err, list) {
+		        if (err) return cb(err);
+
+		        async.forEach(
+		          list,
+		          function(diritem, callback) {
+		            readSizeRecursive(path.join(item, diritem), function(err, size) {
+		              total += size;
+		              callback(err);
+		            }); 
+		          },  
+		          function(err) {
+		            cb(err, total);
+		          }   
+		        );  
+		      }); 
+		    }   
+		    else {
+		      cb(err, total);
+		    }   
+		  }); 
+		}   
 		</script>
 	</head>
 	<body>
+		<br />
+		<br />
 		<div ng-controller="MainController" class="container">
 			<div class="row">
 				<div class="col-sm-4">
-					<label>Save files to folder (no trailing slash)</label>
-					<input class="form-control" type="text" ng-model="saveFolder" ng-change="saveSaveFolder()" value="" />
+					<div class="btn-group">
+						<button type="checkbox" class="btn btn-default btn-xl"
+							ng-disabled="!autosnapEnabled" 
+							ng-click="toggleSnapEnabled()">
+							OFF
+							&nbsp;
+							<i ng-show="!autosnapEnabled" class="fa fa-check-circle-o"></i>
+						</button>
+						<button type="checkbox" class="btn btn-default"
+							ng-disabled="autosnapEnabled" 
+							ng-click="toggleSnapEnabled()">
+							ON
+							&nbsp;
+							<i ng-show="autosnapEnabled" class="fa fa-check-circle-o"></i>
+						</button>
+					</div>
+
+					<br />
+					<br />
+					<br />
+					<br />
+					<button class="btn btn-default btn-sm" ng-class="{active:preview}" ng-click="preview = !preview">
+						preview
+					</button>
+					<button class="btn btn-default btn-sm" ng-class="{active:settings}" ng-click="settings = !settings">
+						advanced settings
+					</button>
+				</div>
+				<div class="col-sm-8">
+					<select class="form-control" ng-model="sourceId" ng-change="setSource()">
+						<option ng-repeat="source in sources" 
+							ng-selected="source.id === sourceId"
+							value="{{source.id}}"> {{ source.label }} </option>
+					</select>
+					
+					<br />
+
+					<label>
+						Save folder
+						<span class="help-inline">{{ folderSize }}</span>
+					</label>
+					<input class="form-control" type="text" ng-model="saveFolder" 
+						ng-blur="checkFolderSize()"
+						ng-change="saveSaveFolder()" value="" />
+				</div>
+				
+			</div>
+			
+			<div class="row" ng-show="settings">					
+				<br />
+				<div class="col-sm-4">
+					<label>Max image folder size in gigabytes (gb)</label>
+					<input type="text" class="form-control" ng-model="proposedGb"
+						ng-change="saveMaxFolderBytes()" />
+					<div class="checkbox">
+						<label>
+							<input type="checkbox" ng-model="enableTimestamp" 
+								ng-change="saveEnableTimestamp()" value="" />
+								Timestamp the images
+						</label>
+					</div>
+				</div>
+				<div class="col-sm-4">
+					<label>Autosnap interval (miliseconds)</label>
+					<input class="form-control" type="text" ng-model="snapInterval" 
+						ng-change="saveSnapInterval()" value="" />
 				</div>
 				<div class="col-sm-4">
 					<label>File format 
@@ -175,47 +369,24 @@
 					</label>
 					<input class="form-control" type="text" ng-model="dateFormat" ng-change="saveDateFormat()" value="" />
 				</div>
-				<div class="col-sm-4">
-					<label>video source</label>
-					<select class="form-control" ng-model="sourceId" ng-change="setSource()">
-						<option ng-repeat="source in sources" 
-							ng-selected="source.id === sourceId"
-							value="{{source.id}}"> {{ source.label }} </option>
-					</select>
-				</div>
-			</div>
-			<div class="row">
-				<div class="col-sm-4">
-					<label>Automatically capture (autosnap)
-						<input class="form-control" type="checkbox" ng-model="autosnapEnabled" 
-							ng-change="saveSnapEnabled()" value="" />
-					</label>
-				</div>
-				<div class="col-sm-4">
-					<label>Autosnap interval (miliseconds)</label>
-					<input class="form-control" type="text" ng-model="snapInterval" 
-						ng-change="saveSnapInterval()" value="" />
-				</div>
-				<div class="col-sm-4">
-					
-				</div>
 			</div>
 			
 			<hr />
-
-			<div ng-show="errMessage" class="alert alert-danger">{{ errMessage }}</div>
-			<div ng-show="message" class="alert alert-info">{{ message }}</div>
-
-			<div class="row">
-				<div class="col-sm-6">
+			<p ng-show="errMessage" class="text-danger">{{ errMessage }}</p>
+			<p ng-show="message" class="text-info">{{ message }}</p>
+			
+			<div class="row" ng-show="preview">
+				<div class="col-sm-8">
+					<span class="help-block">Turn off preview to save energy.</span>
 					<video ng-click="snap()" class="img-responsive" id="vid" autoplay></video>
 				</div>
-				<div class="col-sm-3">
+				<div class="col-sm-4">
+					<label>Last photo</label>
 					<img id="img" class="img-responsive img-thumbnail" src="">
 				</div>
-				<div class="col-sm-3">
-					
-				</div>
+				<br />
+				<br />
+				<br />
 			</div>
 			
 			<canvas id="can"></canvas>
