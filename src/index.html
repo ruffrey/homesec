@@ -225,11 +225,11 @@
 			$scope.toggleSnapEnabled = function () {
 				$scope.autosnapEnabled = !$scope.autosnapEnabled;
 				localStorage.autosnapEnabled = $scope.autosnapEnabled;
-				$scope.message = "Autosnap changed to " + $scope.autosnapEnabled;
+				$scope.message = "System has been " + ($scope.autosnapEnabled ? "enabled" : "disabled") + ".";
 			};
 			$scope.saveEnableTimestamp = function () {
 				localStorage.enableTimestamp = $scope.enableTimestamp;
-				$scope.message = "Image timestamp changed to " + $scope.enableTimestamp;
+				$scope.message = "Image timestamp set to " + ($scope.enableTimestamp ? "enabled" : "disabled") + ".";
 			};
 			$scope.saveMaxFolderBytes = function () {
 				// $scope.proposedGb
@@ -299,15 +299,19 @@
 							ng-disabled="!autosnapEnabled" 
 							ng-click="toggleSnapEnabled()">
 							OFF
-							&nbsp;
-							<i ng-show="!autosnapEnabled" class="fa fa-check-circle-o"></i>
+							<span ng-show="!autosnapEnabled">
+								&nbsp;
+								<i class="fa fa-check-circle-o"></i>
+							</span>
 						</button>
 						<button type="checkbox" class="btn btn-default"
 							ng-disabled="autosnapEnabled" 
 							ng-click="toggleSnapEnabled()">
 							ON
-							&nbsp;
-							<i ng-show="autosnapEnabled" class="fa fa-check-circle-o"></i>
+							<span ng-show="autosnapEnabled">
+								&nbsp;
+								<i class="fa fa-check-circle-o"></i>
+							</span>
 						</button>
 					</div>
 

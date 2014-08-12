@@ -1,11 +1,12 @@
 {
   "name": "Homesec",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Home security app",
   "main": "index.html",
   "dependencies": {
-    "moment": "^2.8.1",
-    "async": "^0.9.0"
+    "imagemin": "^0.4.7",
+    "async": "^0.9.0",
+    "moment": "^2.8.1"
   },
   "window": {
     "title": "Homesec",
