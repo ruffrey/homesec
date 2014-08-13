@@ -8,9 +8,9 @@ exports = module.exports = function (grunt) {
       		  	credits: './src/credits.html',
 		      	build_dir: './build', // Where the build version of my node-webkit app is saved
 		      	mac: true,
-		      	win: false,
-		      	linux32: false,
-		      	linux64: false
+		      	win: true,
+		      	linux32: true,
+		      	linux64: true
 		  },
 		  src: ['./src/**/*'] // Your node-wekit app
 	  	}
