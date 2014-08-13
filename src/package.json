@@ -1,6 +1,6 @@
 {
   "name": "Homesec",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Home security app",
   "main": "index.html",
   "js-flags": "--stack_size=180000",
