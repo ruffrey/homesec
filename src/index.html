@@ -74,14 +74,15 @@
 			  	var imageBuffer = new Buffer(imageText, 'base64');
 			  	
 			  	// save it to the file system
-			  	fs.writeFile(saveFilePath, imageBuffer, {encoding: 'base64'}, function (err) {
+			  	var tempDestination = saveFilePath.replace('.png', '-temp.png');
+			  	fs.writeFile(tempDestination, imageBuffer, {encoding: 'base64'}, function (err) {
 			  		if (err) {
 			  			return callback(err, null);
 			  		}
 
 		  			// compress the image and write it over itself
 		  			var imagemin = new Imagemin()
-					    .src(saveFilePath)
+					    .src(tempDestination)
 					    .dest(saveFilePath)
 					    .use(Imagemin.pngquant());
 
@@ -91,7 +92,9 @@
 					    }
 				    	// set it as the thumbnail
 					  	document.getElementById('img').src = canvasData;
-	  					callback(null, saveFilePath);
+	  					fs.unlink(tempDestination, function (err) {
+	  						callback(err, saveFilePath);
+	  					});
 					});
 
 			  	});
