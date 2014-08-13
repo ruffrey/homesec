@@ -102,7 +102,7 @@
 
 			init(function (err) {
 				if (err) {
-					$scope.errMessage = err;
+					$scope.errMessage = err.message;
 					return;
 				}
 				$scope.sources = sources;
@@ -159,7 +159,7 @@
 
 				readSizeRecursive($scope.saveFolder, function (err, bytes) {
 					if (err) {
-						$scope.errMessage = err;
+						$scope.errMessage = err.message;
 						$scope.$apply();
 						return;
 					}
@@ -201,7 +201,7 @@
 				var saveFilePath = $scope.saveFolder + '/' + moment().format($scope.dateFormat) + '.png';
 				snapshot(saveFilePath, $scope.enableTimestamp, function (err, filepath) {
 					if (err) {
-						$scope.errMessage = err;
+						$scope.errMessage = err.message;
 					}
 					else {
 						$scope.message = "Saved to " + filepath;
@@ -295,7 +295,8 @@
 			<div class="row">
 				<div class="col-sm-4">
 					<div class="btn-group">
-						<button type="checkbox" class="btn btn-default btn-xl"
+						<button type="checkbox" class="btn btn-default"
+							ng-class="{ bold: !autosnapEnabled }"
 							ng-disabled="!autosnapEnabled" 
 							ng-click="toggleSnapEnabled()">
 							OFF
@@ -305,6 +306,7 @@
 							</span>
 						</button>
 						<button type="checkbox" class="btn btn-default"
+							ng-class="{ bold: autosnapEnabled }"
 							ng-disabled="autosnapEnabled" 
 							ng-click="toggleSnapEnabled()">
 							ON
