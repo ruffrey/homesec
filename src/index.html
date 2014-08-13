@@ -11,14 +11,6 @@
 		var moment = require('moment');
 		var Imagemin = require('imagemin');
 		var path = require('path');
-	    var async = require('async');
-
-
-		var ctx;
-		var canvas;
-		var localMediaStream;
-		var video;
-		var sources;
 
 		var constraints = {
 			video: {
@@ -32,7 +24,11 @@
 
 		function init(callback) {
 			MediaStreamTrack.getSources(function (src) {
-        		sources = [];
+        		var sources = [];
+        		if (!src || !src.length) {
+        			alert("No video sources detected. Please connect a video source and restart this app.");
+        			return;
+        		}
         		src.forEach(function (s) {
         			if (s.kind === 'video') {
         				sources.push(s);
@@ -40,12 +36,11 @@
         		});
         		constraints.video.optional.push({sourceId: localStorage.sourceId || src[0].id});
 
-        		video = document.getElementById('vid');
-				canvas = document.getElementById('can');
         		navigator.webkitGetUserMedia(constraints, function (stream) {
+        			var video = document.getElementById('vid');
 					video.src = window.URL.createObjectURL(stream);
-					localMediaStream = stream;
-					callback(null);
+					
+					callback(null, sources);
 				}, function (err) {
 					console.error(err);
 					callback(err);
@@ -54,15 +49,21 @@
 		}
 
 		function snapshot(saveFilePath, doTimestamp, callback) {
-			if (localMediaStream) {
-				// draw the image onto the canvas first
+			var video = document.getElementById('vid'); 
+
+			if (video.src) {
+				var canvas = document.getElementById('can');
+				// the first time, load this context stuff
 				canvas.height = video.videoHeight;
 				canvas.width = video.videoWidth;
-				ctx = canvas.getContext('2d');
+				canvas.width = canvas.width; // clear the canvas completely
+		  		var ctx = canvas.getContext('2d');
+
+				// draw the video image onto the canvas
 			  	ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 
 			  	if (doTimestamp) {
-			  		ctx.fillStyle = "#ffffff";
+					ctx.fillStyle = "#ffffff";
 					ctx.font = "14px Tahoma";
 				  	ctx.fillText(moment().format('llll'), 10, 20);
 			  	}
@@ -100,7 +101,7 @@
 
 		function MainController($scope) {
 
-			init(function (err) {
+			init(function (err, sources) {
 				if (err) {
 					$scope.errMessage = err.message;
 					return;
@@ -135,64 +136,88 @@
 				return outText;
 			}
 
-			$scope.sources = []; // reference
+			$scope.sources = [];
 
-			$scope.snapInterval = localStorage.snapInterval ? parseFloat(localStorage.snapInterval) : 5000;
+			$scope.snapInterval = localStorage.snapInterval ? parseFloat(localStorage.snapInterval) : 2000;
 			$scope.autosnapEnabled = localStorage.autosnapEnabled === 'true' ? true : false;
 
 			var snapLooper = function () {
-				console.log('Autosnap', $scope.autosnapEnabled);
 				if ($scope.autosnapEnabled) {
 					$scope.snap();
 				}
 				setTimeout(snapLooper, $scope.snapInterval);
 			};
 
-			$scope.checkFolderSize = function () {
-				$scope.errMessage = "";
-
-				// a bit of validation - dont let it end in trailing slash
-				if ($scope.saveFolder[$scope.saveFolder.length - 1] === "/" && $scope.saveFolder.length > 1) {
-					$scope.saveFolder = $scope.saveFolder.substring(0, $scope.saveFolder.length - 1);
-					$scope.saveSaveFolder();
+			var cleanupLooper = function () {
+				if (!$scope.saveFolder || !fs.existsSync($scope.saveFolder)) {
+					$scope.errMessage = "Folder does not exist: " + $scope.saveFolder;
+					$scope.$apply();
+					setTimeout(cleanupLooper, 3000);
+					return;
 				}
 
-				readSizeRecursive($scope.saveFolder, function (err, bytes) {
-					if (err) {
-						$scope.errMessage = err.message;
-						$scope.$apply();
-						return;
+				var files = fs.readdirSync($scope.saveFolder);
+				files.sort(function (a, b) {
+					if (a < b) return 1;
+					if (a > b) return -1;
+					return 1;
+				});
+
+				var bytes = 0;
+
+				// Remove the eldest files once you get too many bytes.
+				for (var i= 0; i < files.length; i++) {
+
+					if (files[i][0] === '.') {
+						continue; // ignore system files starting with period
 					}
 
-					var files = fs.readdirSync($scope.saveFolder);
+					var file = $scope.saveFolder + "/" + files[i];
+					var fileBytes = fs.lstatSync(file).size;
 
-					files.sort(function (a, b) {
-						if (a < b) return 1;
-						if (a > b) return -1;
-						return 1;
-					});
-					
-					// remove the eldest files while there are too many bytes
-					while (files.length && bytes > $scope.maxFolderBytes) {
+					if (bytes > $scope.maxFolderBytes) {
 						try {
-							var file = $scope.saveFolder + "/" + files.pop();
-							if (file[0] === '.') continue;
-
-							var fileBytes = fs.lstatSync(file).size;
-							bytes -= fileBytes;
 							fs.unlinkSync(file);
 						}
 						catch (ex) {
 							$scope.errMessage = ex;
 							console.error(ex.stack);
 							$scope.$apply();
+							setTimeout(cleanupLooper, 3000);
 							return;
 						}
 					}
+					else {
+						bytes += fileBytes;
+					}
+				}
+				$scope.folderSize = getReadableSize(bytes);
+				$scope.$apply();
+				setTimeout(cleanupLooper, 3000);
 
-					$scope.folderSize = getReadableSize(bytes);
+			};
+
+			$scope.checkFolderValid = function () {
+				$scope.errMessage = "";
+				$scope.message = "";
+				if (!fs.existsSync($scope.saveFolder)) {
+					$scope.errMessage = "Folder " + $scope.saveFolder + " does not exist.";
 					$scope.$apply();
-				});
+					return;
+				}
+				var stats = fs.lstatSync($scope.saveFolder)
+				if (!stats.isDirectory()) {
+					$scope.errMessage = $scope.saveFolder + " is not a directory.";
+					$scope.$apply();
+					return;
+				}
+				var lastChar = $scope.saveFolder[$scope.saveFolder.length -1];
+				if (lastChar === '/' || lastChar === '\\') {
+					$scope.errMessage = "Folder name cannot end in " + lastChar;
+					$scope.$apply();
+					return;
+				}
+				$scope.saveSaveFolder();
 			};
 
 			$scope.snap = function () {
@@ -201,47 +226,53 @@
 				var saveFilePath = $scope.saveFolder + '/' + moment().format($scope.dateFormat) + '.png';
 				snapshot(saveFilePath, $scope.enableTimestamp, function (err, filepath) {
 					if (err) {
+						console.error(err);
 						$scope.errMessage = err.message;
 					}
 					else {
-						$scope.message = "Saved to " + filepath;
+						$scope.message = "Image saved to " + filepath;
 					}
-					$scope.checkFolderSize();
+					$scope.$apply();
 				});
 			};
 
 			$scope.saveDateFormat = function () {
 				localStorage.dateFormat = $scope.dateFormat || DEFAULT_DATE;
-				$scope.message = "Filename format changed to " + $scope.dateFormat;
+				$scope.message = "Filename format changed to " + $scope.dateFormat + ".";
 			};
 			$scope.saveSaveFolder = function () {
 				localStorage.saveFolder = $scope.saveFolder;
-				$scope.message = "Save folder changed to " + $scope.saveFolder;
+				$scope.message = "Save folder path set to: " + $scope.saveFolder;
 			};
 			$scope.saveSnapInterval = function () {
 				localStorage.snapInterval = $scope.snapInterval;
-				$scope.message = "Snap interval changed to " + $scope.snapInterval;
+				$scope.message = "Snap interval changed to " + $scope.snapInterval + " miliseconds.";
 			};
 			$scope.toggleSnapEnabled = function () {
 				$scope.autosnapEnabled = !$scope.autosnapEnabled;
 				localStorage.autosnapEnabled = $scope.autosnapEnabled;
+				// close these areas when turning on autosnap
+				if ($scope.autosnapEnabled) {
+					$scope.settings = false;
+					$scope.preview = false;
+				}
 				$scope.message = "System has been " + ($scope.autosnapEnabled ? "enabled" : "disabled") + ".";
 			};
 			$scope.saveEnableTimestamp = function () {
 				localStorage.enableTimestamp = $scope.enableTimestamp;
-				$scope.message = "Image timestamp set to " + ($scope.enableTimestamp ? "enabled" : "disabled") + ".";
+				$scope.message = "Image timestamp " + ($scope.enableTimestamp ? "enabled" : "disabled") + ".";
 			};
 			$scope.saveMaxFolderBytes = function () {
 				// $scope.proposedGb
 				if (isNaN($scope.proposedGb)) {
-					$scope.errMessage = "Invalid max gigabytes - must be a number.";
+					$scope.errMessage = "Invalid max folder size - must be a number.";
 					return;
 				}
 				
 				$scope.errMessage = "";
 				$scope.maxFolderBytes = parseFloat($scope.proposedGb) * 1024 * 1024 * 1024;
 				localStorage.maxFolderBytes = $scope.maxFolderBytes;
-				$scope.message = "Set max image folder size to " + $scope.proposedGb;
+				$scope.message = "Set max image folder size to " + getReadableSize($scope.maxFolderBytes) + ".";
 			};
 
 
@@ -253,39 +284,9 @@
 
 
 			snapLooper();
-			$scope.checkFolderSize();
+			cleanupLooper();
 		}
-
-
-		function readSizeRecursive(item, cb) {
-		  fs.lstat(item, function (err, stats) {
-		  	if (err) return cb(err);
-
-		    var total = stats.size;
-
-		    if (!err && stats.isDirectory()) {
-		      fs.readdir(item, function(err, list) {
-		        if (err) return cb(err);
-
-		        async.forEach(
-		          list,
-		          function(diritem, callback) {
-		            readSizeRecursive(path.join(item, diritem), function(err, size) {
-		              total += size;
-		              callback(err);
-		            }); 
-		          },  
-		          function(err) {
-		            cb(err, total);
-		          }   
-		        );  
-		      }); 
-		    }   
-		    else {
-		      cb(err, total);
-		    }   
-		  }); 
-		}   
+ 
 		</script>
 	</head>
 	<body>
@@ -319,30 +320,36 @@
 
 					<br />
 					<br />
-					<button class="btn btn-default btn-sm" ng-class="{active:preview}" ng-click="preview = !preview">
-						Camera Preview
+					<button class="btn btn-default btn-sm" ng-class="{active:settings}" ng-click="settings = !settings; preview = false;">
+						<i class="fa fa-cogs"></i>
+						&nbsp;
+						Settings
 					</button>
 					<br />
 					<br />
-					<button class="btn btn-default btn-sm" ng-class="{active:settings}" ng-click="settings = !settings">
-						Advanced Settings
+					<button class="btn btn-default btn-sm" ng-class="{active:preview}" 
+						ng-click="preview = !preview; settings = false;">
+						<i class="fa fa-camera"></i>
+						&nbsp;
+						Preview
 					</button>
 				</div>
 				<div class="col-sm-8">
 					<select class="form-control" ng-model="sourceId" ng-change="setSource()">
 						<option ng-repeat="source in sources" 
 							ng-selected="source.id === sourceId"
+							ng-disabled="autosnapEnabled"
 							value="{{source.id}}"> {{ source.label }} </option>
 					</select>
 					
 					<br />
 
 					<label>
-						Save folder
+						Save folder path
 					</label>
 					<input class="form-control" type="text" ng-model="saveFolder" 
-						ng-blur="checkFolderSize()"
-						ng-change="saveSaveFolder()" value="" />
+						ng-disabled="autosnapEnabled"
+						ng-change="checkFolderValid()" value="" />
 					<span class="help-block">{{ folderSize }}</span>
 				</div>
 				
@@ -351,20 +358,23 @@
 			<div class="row" ng-show="settings">					
 				<br />
 				<div class="col-sm-4">
-					<label>Max image folder size in gigabytes (gb)</label>
+					<label>Max folder size (gb)</label>
 					<input type="text" class="form-control" ng-model="proposedGb"
+						ng-disabled="autosnapEnabled"
 						ng-change="saveMaxFolderBytes()" />
 					<div class="checkbox">
 						<label>
 							<input type="checkbox" ng-model="enableTimestamp" 
+								ng-disabled="autosnapEnabled"
 								ng-change="saveEnableTimestamp()" value="" />
 								Timestamp the images
 						</label>
 					</div>
 				</div>
 				<div class="col-sm-4">
-					<label>Autosnap interval (miliseconds)</label>
+					<label>Snap interval (ms)</label>
 					<input class="form-control" type="text" ng-model="snapInterval" 
+						ng-disabled="autosnapEnabled"
 						ng-change="saveSnapInterval()" value="" />
 				</div>
 				<div class="col-sm-4">
@@ -373,11 +383,12 @@
 						<a href="http://momentjs.com/docs/#/displaying/" 
 							target="_blank">moment.js</a>)
 					</label>
-					<input class="form-control" type="text" ng-model="dateFormat" ng-change="saveDateFormat()" value="" />
+					<input class="form-control" type="text" ng-model="dateFormat" 
+						ng-disabled="autosnapEnabled"
+						ng-change="saveDateFormat()" value="" />
 				</div>
 			</div>
-			
-			<hr />
+			<br />
 			<p ng-show="errMessage" class="text-danger">{{ errMessage }}</p>
 			<p ng-show="message" class="text-info">{{ message }}</p>
 			
