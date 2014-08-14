@@ -14,7 +14,9 @@ Building the app:
 	cd ../
 	grunt
 
-Look in the build folder and you'll have apps for mac, windows, and linux. Tweak settings in `Gruntfile.js` and `src/package.json`, if you like.
+Look in the build folder and you'll have apps for mac, windows, and linux. 
+
+Tweak settings in `Gruntfile.js` ([see here](https://github.com/mllrsohn/grunt-node-webkit-builder)) and `src/package.json` ([see here](https://github.com/rogerwang/node-webkit/wiki/Manifest-format)), if you like.
 
 ### License
 
