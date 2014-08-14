@@ -3,15 +3,12 @@
   "version": "0.0.6",
   "description": "Home security app",
   "main": "index.html",
-  "js-flags": "--stack_size=180000",
   "dependencies": {
-    "imagemin": "^0.4.7",
-    "async": "^0.9.0",
     "moment": "^2.8.1"
   },
   "window": {
     "title": "Homesec",
-    "toolbar": false,
+    "toolbar": true,
     "frame": true,
     "width": 800,
     "height": 380,
@@ -22,6 +19,7 @@
     "max_height": 700
   },
   "webkit": {
-    "plugin": false
+    "plugin": true,
+	"page-cache": true
   }
 }

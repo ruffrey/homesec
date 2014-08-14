@@ -9,7 +9,6 @@
 		<script>
 		var fs = require('fs');
 		var moment = require('moment');
-		var Imagemin = require('imagemin');
 		var path = require('path');
 
 		var constraints = {
@@ -25,15 +24,22 @@
 		function init(callback) {
 			MediaStreamTrack.getSources(function (src) {
         		var sources = [];
+				var noSourceMessage = "No video sources detected. Please connect a video source and restart this app.";
         		if (!src || !src.length) {
-        			alert("No video sources detected. Please connect a video source and restart this app.");
+        			alert(noSourceMessage);
         			return;
         		}
+				console.debug('Got sources', src);
         		src.forEach(function (s) {
         			if (s.kind === 'video') {
         				sources.push(s);
         			}
         		});
+				console.debug('Video sources are', sources);
+				if (!sources.length) {
+					alert(noSourceMessage);
+					return;
+				}
         		constraints.video.optional.push({sourceId: localStorage.sourceId || src[0].id});
 
         		navigator.webkitGetUserMedia(constraints, function (stream) {
@@ -74,29 +80,11 @@
 			  	var imageBuffer = new Buffer(imageText, 'base64');
 			  	
 			  	// save it to the file system
-			  	var tempDestination = saveFilePath.replace('.png', '-temp.png');
-			  	fs.writeFile(tempDestination, imageBuffer, {encoding: 'base64'}, function (err) {
-			  		if (err) {
-			  			return callback(err, null);
-			  		}
-
-		  			// compress the image and write it over itself
-		  			var imagemin = new Imagemin()
-					    .src(tempDestination)
-					    .dest(saveFilePath)
-					    .use(Imagemin.pngquant());
-
-					imagemin.optimize(function (err, file) {
-					    if (err) {
-					    	return callback(err, file);
-					    }
-				    	// set it as the thumbnail
-					  	document.getElementById('img').src = canvasData;
-	  					fs.unlink(tempDestination, function (err) {
-	  						callback(err, saveFilePath);
-	  					});
-					});
-
+			  	fs.writeFile(saveFilePath, imageBuffer, {encoding: 'base64'}, function (err) {
+					if (!err) {
+						document.getElementById('img').src = canvasData;
+					}
+	  				callback(err, saveFilePath);
 			  	});
 			}
 		} 
@@ -120,7 +108,7 @@
 			$scope.errMessage = "";
 			$scope.message = "";
 			$scope.sourceId = localStorage.sourceId || null;
-			$scope.enableTimestamp = localStorage.enableTimestamp === 'true' ? true : false;
+			$scope.enableTimestamp = localStorage.enableTimestamp === 'false' ? false : true;
 			$scope.folderSize = "";
 			$scope.maxFolderBytes = localStorage.maxFolderBytes ? parseFloat(localStorage.maxFolderBytes) : 1024 * 1024 * 1024 * 20; // 20gb
 			$scope.proposedGb = ($scope.maxFolderBytes / 1024 / 1024 / 1024).toFixed(2);
@@ -153,6 +141,10 @@
 
 			var cleanupLooper = function () {
 				console.debug('cleanupLooper');
+				if (!$scope.autosnapEnabled) {
+					$timeout(cleanupLooper, 3000);
+					return;
+				}
 				if (!$scope.saveFolder || !fs.existsSync($scope.saveFolder)) {
 					$scope.errMessage = "Folder does not exist: " + $scope.saveFolder;
 					$scope.$apply();
@@ -203,19 +195,16 @@
 				$scope.errMessage = "";
 				if (!fs.existsSync($scope.saveFolder)) {
 					$scope.errMessage = "Folder " + $scope.saveFolder + " does not exist.";
-					// $scope.$apply();
 					return;
 				}
 				var stats = fs.lstatSync($scope.saveFolder)
 				if (!stats.isDirectory()) {
 					$scope.errMessage = $scope.saveFolder + " is not a directory.";
-					// $scope.$apply();
 					return;
 				}
 				var lastChar = $scope.saveFolder[$scope.saveFolder.length -1];
 				if (lastChar === '/' || lastChar === '\\') {
 					$scope.errMessage = "Folder name cannot end in " + lastChar;
-					// $scope.$apply();
 					return;
 				}
 				$scope.saveSaveFolder();
@@ -235,8 +224,6 @@
 					if (callback) {
 						callback();
 					}
-					// this comes after in case scope update is already in progress
-					// $scope.$apply();
 				});
 			};
 

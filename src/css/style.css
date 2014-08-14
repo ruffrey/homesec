@@ -1,9 +1,9 @@
 body {
-	font-family: 'Lucida Grande', 'Tahoma', sans-serif;
+	font-family: 'Lucida Grande', 'Segoe UI', 'Ubuntu', 'Tahoma', sans-serif;
 	background: #E8E8E8;
 }
 canvas#can {
-	display:none;
+	display: none;
 }
 .bold {
 	font-weight: bold;

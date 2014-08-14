@@ -4,10 +4,10 @@ exports = module.exports = function (grunt) {
 	grunt.initConfig({
 	  	nodewebkit: {
 	  		options: {
-		      	platforms: ['osx', 'win'],
+		      	platforms: ['win'],
       		  	macCredits: './src/credits.html',
 		      	buildDir: './build', // Where the build version of my node-webkit app is saved
-		      	version: '0.10.2'
+		      	version: '0.8.4'
 		  },
 		  src: ['./src/**/*'] // Your node-wekit app
 	  	}
