@@ -201,7 +201,6 @@
 
 			$scope.checkFolderValid = function () {
 				$scope.errMessage = "";
-				$scope.message = "";
 				if (!fs.existsSync($scope.saveFolder)) {
 					$scope.errMessage = "Folder " + $scope.saveFolder + " does not exist.";
 					// $scope.$apply();
@@ -223,7 +222,6 @@
 			};
 
 			$scope.snap = function (callback) {
-				$scope.message = "";
 				$scope.errMessage = "";
 				var saveFilePath = $scope.saveFolder + '/' + moment().format($scope.dateFormat) + '.png';
 				snapshot(saveFilePath, $scope.enableTimestamp, function (err, filepath) {
