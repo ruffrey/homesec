@@ -10,6 +10,24 @@
 		var fs = require('fs');
 		var moment = require('moment');
 		var path = require('path');
+		var execFile = require('child_process').execFile;
+		var pngquant = require('pngquant-bin').path;
+
+		function compressPng(pngBuffer, pngPath, callback) {
+			var tempPath = pngPath.replace('.png', '-temp.png');
+
+			fs.writeFile(tempPath, pngBuffer, {encoding: 'base64'}, function (err) {
+				if (err) {
+					return callback(err);
+				}
+				execFile(pngquant, ['-o', pngPath, tempPath], function (err) {
+					if (err) {
+						return callback(err);
+					}
+					fs.unlink(tempPath, callback);
+				});
+			});
+		}
 
 		var constraints = {
 			video: {
@@ -80,12 +98,16 @@
 			  	var imageBuffer = new Buffer(imageText, 'base64');
 			  	
 			  	// save it to the file system
-			  	fs.writeFile(saveFilePath, imageBuffer, {encoding: 'base64'}, function (err) {
-					if (!err) {
-						document.getElementById('img').src = canvasData;
+			  	
+				compressPng(imageBuffer, saveFilePath, function (err) {
+					if (err) {
+						callback(err, null);
+						return;
 					}
-	  				callback(err, saveFilePath);
-			  	});
+
+					document.getElementById('img').src = canvasData;
+  					callback(null, saveFilePath);
+  				});
 			}
 		} 
 

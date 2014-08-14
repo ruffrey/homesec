@@ -4,7 +4,8 @@
   "description": "Home security app",
   "main": "index.html",
   "dependencies": {
-    "moment": "^2.8.1"
+    "moment": "^2.8.1",
+    "pngquant-bin": "^0.3.5"
   },
   "window": {
     "title": "Homesec",
@@ -20,6 +21,6 @@
   },
   "webkit": {
     "plugin": true,
-	"page-cache": true
+    "page-cache": true
   }
 }
