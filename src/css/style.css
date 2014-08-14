@@ -1,0 +1,10 @@
+body {
+	font-family: 'Lucida Grande', 'Tahoma', sans-serif;
+	background: #E8E8E8;
+}
+canvas#can {
+	display:none;
+}
+.bold {
+	font-weight: bold;
+}

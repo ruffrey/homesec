@@ -1,0 +1,13 @@
+{
+  "name": "homesec",
+  "version": "0.0.4",
+  "description": "home security app",
+  "scripts": {},
+  "author": "jeffhparrish@gmail.com",
+  "license": "MIT",
+  "devDependencies": {
+    "grunt": "^0.4.2",
+    "grunt-node-webkit-builder": "0.2.0"
+  },
+  "dependencies": {}
+}
