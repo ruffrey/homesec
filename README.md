@@ -2,39 +2,6 @@
 
 [Get started by reading the wiki](https://github.com/ruffrey/homesec/wiki)
 
-## Usage guide
-
-### Installing
-
-Download a release for your platform. 
-
-[Latest release >>](https://github.com/ruffrey/homesec/releases/latest)
-
-* **OSX** - unzip and drag `Homesec.app` into your *Applications*
-* **Windows** - unzip it and put the contents somewhere, keeping them all in the same folder. Then run `Homesec.exe`.
-
-### Setting save folder on OSX
-
-OSX - external drives are at `/Volumes/`
-
-### Storage space estimations
-
-Default photo snap interval is 2000ms (2 seconds) which should create about 15 mb (or less) of images per minute. Images are about 300 kb to 500 kb.
-
-The app won't start cleaning out your save folder, by default, until it reaches 20 gb. That means you have 22.75 hours or more of photos.
-
-You can increase the folder allowance in *Settings*. Here are rough, optimistic estimates:
-
-* 20gb = 22.75+ hours
-* 40gb = 45.5+ hours
-* 80gb = 91+ hours
-* 160gb = 7.5+ days
-* 320gb = 15.1+ days
-* 640gb = 30+ days
-* 1tb = 48+ days
-
-If you set the max storage to more than is available, you're gonna have a bad time.
-
 ## Development
 
 Requires [grunt](http://gruntjs.com) and [Node](http://nodejs.org).
