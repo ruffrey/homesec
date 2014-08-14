@@ -5,11 +5,13 @@
   "main": "index.html",
   "dependencies": {
     "moment": "^2.8.1",
-    "pngquant-bin": "^0.3.5"
+    "optipng-bin": "git+https://github.com/imagemin/optipng-bin",
+    "pngquant-bin": "git+https://github.com/imagemin/pngquant-bin",
+    "imagemin": "git+https://github.com/kevva/imagemin"
   },
   "window": {
     "title": "Homesec",
-    "toolbar": false,
+    "toolbar": true,
     "frame": true,
     "width": 800,
     "height": 380,

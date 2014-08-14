@@ -10,23 +10,32 @@
 		var fs = require('fs');
 		var moment = require('moment');
 		var path = require('path');
-		var execFile = require('child_process').execFile;
-		var pngquant = require('pngquant-bin').path;
+		var Imagemin = require('imagemin');
+		var pngquant = Imagemin.pngquant;
 
 		function compressPng(pngBuffer, pngPath, callback) {
 			var tempPath = pngPath.replace('.png', '-temp.png');
+			fs.writeFile(tempPath, pngBuffer, {encoding: 'base64'}, function (err) {});
 
-			fs.writeFile(tempPath, pngBuffer, {encoding: 'base64'}, function (err) {
-				if (err) {
-					return callback(err);
-				}
-				execFile(pngquant, ['-o', pngPath, tempPath], function (err) {
-					if (err) {
-						return callback(err);
-					}
-					fs.unlink(tempPath, callback);
-				});
-			});
+			var imagemin = new Imagemin()
+			    .src(pngBuffer)
+			    .dest(pngPath)
+			    .use(pngquant({ quality: '70-98', speed: 5 }));
+			    // .use(pngquant());
+
+			imagemin.optimize(callback);
+
+			// fs.writeFile(tempPath, pngBuffer, {encoding: 'base64'}, function (err) {
+			// 	if (err) {
+			// 		return callback(err);
+			// 	}
+				// execFile(pngquant, ['-f', '-o', pngPath, tempPath], function (err) {
+				// 	if (err) {
+				// 		return callback(err);
+				// 	}
+				// 	fs.unlink(tempPath, callback);
+				// });
+			// });
 		}
 
 		var constraints = {
