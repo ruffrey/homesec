@@ -6,8 +6,8 @@
   "author": "jeffhparrish@gmail.com",
   "license": "MIT",
   "devDependencies": {
-    "grunt": "^0.4.5",
-    "grunt-node-webkit-builder": "~0.1.17"
+    "grunt": "^0.4.2",
+    "grunt-node-webkit-builder": "0.2.0"
   },
   "dependencies": {}
 }

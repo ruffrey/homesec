@@ -4,13 +4,10 @@ exports = module.exports = function (grunt) {
 	grunt.initConfig({
 	  	nodewebkit: {
 	  		options: {
-		      	app_name: 'Homesec',
-      		  	credits: './src/credits.html',
-		      	build_dir: './build', // Where the build version of my node-webkit app is saved
-		      	mac: true,
-		      	win: false,
-		      	linux32: false,
-		      	linux64: false
+		      	platforms: ['osx'],
+      		  	macCredits: './src/credits.html',
+		      	buildDir: './build', // Where the build version of my node-webkit app is saved
+		      	version: '0.10.2'
 		  },
 		  src: ['./src/**/*'] // Your node-wekit app
 	  	}
