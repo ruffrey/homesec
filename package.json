@@ -1,7 +1,7 @@
 {
   "name": "homesec",
-  "version": "0.0.6",
-  "description": "home security app",
+  "version": "0.0.7",
+  "description": "homesec node-webkit build system",
   "scripts": {},
   "author": "jeffhparrish@gmail.com",
   "license": "MIT",

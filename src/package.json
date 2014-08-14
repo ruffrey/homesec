@@ -1,6 +1,6 @@
 {
   "name": "Homesec",
-  "version": "0.0.6",
+  "version": "0.1.0",
   "description": "Home security app",
   "main": "index.html",
   "dependencies": {
@@ -9,7 +9,7 @@
   },
   "window": {
     "title": "Homesec",
-    "toolbar": true,
+    "toolbar": false,
     "frame": true,
     "width": 800,
     "height": 380,
