@@ -9,47 +9,76 @@
 		<script>
 		var fs = require('fs');
 		var moment = require('moment');
-		var path = require('path');
-		var Imagemin = require('imagemin');
-		var pngquant = Imagemin.pngquant;
+		var async = require('async');
+
+		var ExecBuffer = require('exec-buffer');
+		var pngquant = require('pngquant-bin').path;
+		var optipng = require('optipng-bin').path;
 
 		function compressPng(pngBuffer, pngPath, callback) {
-			var tempPath = pngPath.replace('.png', '-temp.png');
-			fs.writeFile(tempPath, pngBuffer, {encoding: 'base64'}, function (err) {});
+			var args_pngquant = [
+				'--quality', '70-98', // quality
+				'--speed', '5' // speed
+			];
+			// -out is destination, then source
+			var args_optipng = [
+				'-strip', 'all', 
+				'-quiet', 
+				'-clobber', 
+				'-o', 2 // optimizationLevel - https://github.com/kevva/imagemin-optipng#optimizationlevel
+			];
 
-			var imagemin = new Imagemin()
-			    .src(pngBuffer)
-			    .dest(pngPath)
-			    .use(pngquant({ quality: '70-98', speed: 5 }));
-			    // .use(pngquant());
+			async.waterfall([
+				function minify(cb) {
+					console.debug('About to minify', args_pngquant);
+					var exec = new ExecBuffer();
+					exec
+		            .use(pngquant, args_pngquant.concat(['-f', '-o', exec.dest(), exec.src()]))
+		            .run(pngBuffer, function (err, buf) {
+		                if (err) {
+		                	console.error('minification error', err);
+		                    cb(err);
+		                    return;
+		                }
 
-			imagemin.optimize(callback);
+		                pngBuffer = buf;
+		                cb();
+		            });
+				},
+				function optimize(cb) {
+					console.debug('About to optimize', args_optipng);
+					var exec = new ExecBuffer();
+					exec
+		            .use(optipng, args_optipng.concat(['-out', exec.dest(), exec.src()]))
+		            .run(pngBuffer, function (err, buf) {
+		                if (err) {
+		                	console.error('optimization error', err);
+		                    cb(err);
+		                    return;
+		                }
 
-			// fs.writeFile(tempPath, pngBuffer, {encoding: 'base64'}, function (err) {
-			// 	if (err) {
-			// 		return callback(err);
-			// 	}
-				// execFile(pngquant, ['-f', '-o', pngPath, tempPath], function (err) {
-				// 	if (err) {
-				// 		return callback(err);
-				// 	}
-				// 	fs.unlink(tempPath, callback);
-				// });
-			// });
-		}
-
-		var constraints = {
-			video: {
-				mandatory: {
-			      	minWidth: 1920,
-			      	minHeight: 1080
-			    },
-			    optional: []
-			}
+		                pngBuffer = buf;
+		                cb();
+		            });
+				},
+				function makePngFile(cb) {
+					console.debug('About to write png', pngPath);
+					fs.writeFile(pngPath, pngBuffer, {encoding: 'base64'}, cb);
+				}
+			], callback);
 		}
 
 		function init(callback) {
 			MediaStreamTrack.getSources(function (src) {
+				var constraints = {
+					video: {
+						mandatory: {
+					      	minWidth: 1920,
+					      	minHeight: 1080
+					    },
+					    optional: []
+					}
+				};
         		var sources = [];
 				var noSourceMessage = "No video sources detected. Please connect a video source and restart this app.";
         		if (!src || !src.length) {
@@ -67,7 +96,9 @@
 					alert(noSourceMessage);
 					return;
 				}
-        		constraints.video.optional.push({sourceId: localStorage.sourceId || src[0].id});
+				if (localStorage.sourceId) {
+	        		constraints.video.optional.push({sourceId: localStorage.sourceId});
+				}
 
         		navigator.webkitGetUserMedia(constraints, function (stream) {
         			var video = document.getElementById('vid');
@@ -132,7 +163,7 @@
 			});
 
 			// Settings
-			var DEFAULT_DATE = "YYYYMMDD HH.mm.ss.SSS";
+			var DEFAULT_DATE = "YYYYMMDD-HH.mm.ss.SSS";
 
 			$scope.dateFormat = localStorage.dateFormat || DEFAULT_DATE;
 			$scope.saveFolder = localStorage.saveFolder || "/Users/jpx/Downloads";

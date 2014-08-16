@@ -4,10 +4,11 @@
   "description": "Home security app",
   "main": "index.html",
   "dependencies": {
+    "async": "^0.9.0",
+    "exec-buffer": "^1.0.0",
     "moment": "^2.8.1",
-    "optipng-bin": "git+https://github.com/imagemin/optipng-bin",
-    "pngquant-bin": "git+https://github.com/imagemin/pngquant-bin",
-    "imagemin": "git+https://github.com/kevva/imagemin"
+    "optipng-bin": "git+https://github.com/ruffrey/optipng-bin",
+    "pngquant-bin": "git+https://github.com/ruffrey/pngquant-bin"
   },
   "window": {
     "title": "Homesec",

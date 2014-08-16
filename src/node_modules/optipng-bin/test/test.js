@@ -42,21 +42,23 @@ describe('optipng()', function () {
 		});
 	});
 
-	it('should minify a PNG', function (cb) {
+	it.only('should minify a PNG', function (cb) {
 		var binPath = require('../').path;
+		var tempPath = path.join(__dirname, 'fixtures', 'test-test.png');
+		var srcPath = path.join(__dirname, 'fixtures', 'test.png');
 		var args = [
 			'-strip', 'all',
 			'-clobber',
-			'-out', path.join(__dirname, 'tmp/test.png'),
-			path.join(__dirname, 'fixtures', 'test.png')
+			'-out', tempPath,
+			srcPath
 		];
-
+		fs.writeFileSync(tempPath);
 		execFile(binPath, args, function (err) {
-			var src = fs.statSync(path.join(__dirname, 'fixtures/test.png')).size;
-			var dest = fs.statSync(path.join(__dirname, 'tmp/test.png')).size;
-
+			var srcSize = fs.statSync(srcPath).size;
+			var destSize = fs.statSync(tempPath).size;
+			console.log(srcSize, destSize);
 			assert(!err);
-			assert(dest < src);
+			assert(destSize < srcSize);
 			cb();
 		});
 	});

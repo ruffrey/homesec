@@ -9,12 +9,14 @@ Requires [grunt](http://gruntjs.com) and [Node](http://nodejs.org).
 Building the app:
 
 	git clone https://github.com/ruffrey/homesec
-	cd homesec && npm install
-	cd src && npm install
-	cd ../
+	cd homesec
 	grunt
 
-Look in the build folder and you'll have apps for mac, windows, and linux. 
+Look in the build folder and you'll have apps for mac, windows, and linux.
+
+### Dependencies
+
+`node_modules` are included in the repo because of the way `Imagemin` does dependences. It tries to install only the binaries for your platform. Unfortunately we want `optipng-bin` and `pngquant-bin` for all vendors (mac, windows, and linuxes). Thus the git repos are used in the package.json, since those do not run the npm installation scripts.  
 
 Tweak settings in `Gruntfile.js` ([see here](https://github.com/mllrsohn/grunt-node-webkit-builder)) and `src/package.json` ([see here](https://github.com/rogerwang/node-webkit/wiki/Manifest-format)), if you like.
 

@@ -2,15 +2,26 @@
 exports = module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-node-webkit-builder');
 	grunt.loadNpmTasks('grunt-contrib-compress');
+	grunt.loadNpmTasks('grunt-contrib-clean');
 	var pkg = require('./src/package.json');
 	grunt.initConfig({
+		clean: {
+			dev: [
+				'./build/Homesec-v' + pkg.version + '-MacOSX.zip', 
+				'./build/Homesec/osx/**/*',
+				'./build/Homesec/osx/'
+			],
+			release: ['./build/**/*']
+		},
 	  	nodewebkit: {
 		  	dev: {
 		  		options: {
 			      	platforms: ['osx'],
 	      		  	macCredits: './src/credits.html',
 			      	buildDir: './build',
-			      	version: '0.8.4'
+			      	version: '0.8.4',
+			      	macIcns: './src/lab.icns',
+			      	winIco: './src/lab.ico'
 			  	},
 		  		src: ['./src/**/*']
 		  	},
@@ -19,7 +30,9 @@ exports = module.exports = function (grunt) {
 			      	platforms: ['osx', 'linux32', 'linux64', 'win'],
 	      		  	macCredits: './src/credits.html',
 			      	buildDir: './build',
-			      	version: '0.8.4'
+			      	version: '0.8.4',
+			      	macIcns: './src/lab.icns',
+			      	winIco: './src/lab.ico'
 			  	},
 		  		src: ['./src/**/*']
 		  	}
@@ -67,6 +80,6 @@ exports = module.exports = function (grunt) {
 		    },
 		}
 	});
-	grunt.registerTask('default', ['nodewebkit:dev']);
-	grunt.registerTask('release', ['nodewebkit:release', 'compress']);
+	grunt.registerTask('default', ['clean:dev', 'nodewebkit:dev']);
+	grunt.registerTask('release', ['clean:release', 'nodewebkit:release', 'compress']);
 };
