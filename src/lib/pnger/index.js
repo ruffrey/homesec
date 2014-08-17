@@ -8,7 +8,7 @@ var async = require('async');
 var pngquant = "";
 var optipng = "";
 var args_pngquant = [
-	'--quality', '65-85', // quality
+	'--quality', '60-80', // quality
 	'--speed', '5' // speed
 ];
 // http://optipng.sourceforge.net/optipng-0.7.5.man.pdf

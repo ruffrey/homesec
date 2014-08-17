@@ -80,6 +80,6 @@ exports = module.exports = function (grunt) {
 		    },
 		}
 	});
-	grunt.registerTask('default', ['clean:dev', 'nodewebkit:dev']);
-	grunt.registerTask('release', ['clean:release', 'nodewebkit:release', 'compress']);
+	grunt.registerTask('default', ['clean', 'nodewebkit:dev']);
+	grunt.registerTask('release', ['clean', 'nodewebkit:release', 'compress']);
 };

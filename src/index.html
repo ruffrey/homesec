@@ -133,7 +133,7 @@
 
 			$scope.sources = [];
 
-			$scope.snapInterval = localStorage.snapInterval ? parseFloat(localStorage.snapInterval) : 2000;
+			$scope.snapInterval = localStorage.snapInterval ? parseFloat(localStorage.snapInterval) : 5000;
 			$scope.autosnapEnabled = localStorage.autosnapEnabled === 'true' ? true : false;
 
 			var snapLooper = function () {
@@ -147,13 +147,13 @@
 			var cleanupLooper = function () {
 				console.debug('cleanupLooper');
 				if (!$scope.autosnapEnabled) {
-					$timeout(cleanupLooper, 3000);
+					$timeout(cleanupLooper, 4000);
 					return;
 				}
 				if (!$scope.saveFolder || !fs.existsSync($scope.saveFolder)) {
 					$scope.errMessage = "Folder does not exist: " + $scope.saveFolder;
 					$scope.$apply();
-					$timeout(cleanupLooper, 3000);
+					$timeout(cleanupLooper, 4000);
 					return;
 				}
 
@@ -184,7 +184,7 @@
 							$scope.errMessage = ex;
 							console.error(ex.stack);
 							$scope.$apply();
-							$timeout(cleanupLooper, 3000);
+							$timeout(cleanupLooper, 4000);
 							return;
 						}
 					}
@@ -193,7 +193,7 @@
 					}
 				}
 				$scope.folderSize = getReadableSize(bytes);
-				$timeout(cleanupLooper, 3000);
+				$timeout(cleanupLooper, 4000);
 			};
 
 			$scope.checkFolderValid = function () {

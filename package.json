@@ -1,6 +1,6 @@
 {
   "name": "homesec",
-  "version": "0.0.7",
+  "version": "0.0.7-2",
   "description": "homesec node-webkit build system",
   "scripts": {},
   "author": "jeffhparrish@gmail.com",
