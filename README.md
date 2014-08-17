@@ -10,7 +10,7 @@ Building the app:
 
 	git clone https://github.com/ruffrey/homesec
 	cd homesec
-	grunt
+	grunt <release>
 
 Look in the build folder and you'll have apps for mac, windows, and linux.
 
