@@ -4,25 +4,48 @@
 
 ## Development
 
-Requires [grunt](http://gruntjs.com) and [Node](http://nodejs.org).
-
-Building the app:
+Requires [Git](http://git-scm.org) [Node](http://nodejs.org) and [Grunt CLI](http://gruntjs.com).
 
 	git clone https://github.com/ruffrey/homesec
 	cd homesec
-	grunt <release>
 
-Look in the build folder and you'll have apps for mac, windows, and linux.
+Building the app for development, on mac:
 
-### Dependencies
+	grunt
 
-`node_modules` are included in the repo because of the way `Imagemin` does dependences. It tries to install only the binaries for your platform. Unfortunately we want `optipng-bin` and `pngquant-bin` for all vendors (mac, windows, and linuxes). Thus the git repos are used in the package.json, since those do not run the npm installation scripts.  
+or 
+	
+	grunt -p=<platform>
+
+* `-p=mac`
+* `-p=win`
+* `-p=linux32`
+* `-p=linux64`
+
+	grunt release
+
+Builds go into the `build/` folder.
+
+To build for all platforms:
+
+	grunt release
+
+### nodewebkit
 
 Tweak settings in `Gruntfile.js` ([see here](https://github.com/mllrsohn/grunt-node-webkit-builder)) and `src/package.json` ([see here](https://github.com/rogerwang/node-webkit/wiki/Manifest-format)), if you like.
 
+
+### Dependencies
+
+`node_modules` are included in the repo, but you could `npm install` from both the main `homesec` repo and `homesec/src`. 
+
+The build system dependencies are at the project root `./node_modules/`. The app dependencies are at `src/node_modules/`.
+
 ### License
 
-MIT
+All included software is copyrighted and protected by the respective developers.
+
+This project is licensed under the **MIT license**:
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
