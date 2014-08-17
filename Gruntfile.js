@@ -7,12 +7,13 @@ exports = module.exports = function (grunt) {
 	
 	grunt.initConfig({
 		clean: {
-			files: ['./build/**/*']
+			dev: ['./build/' + (grunt.option('p') || 'osx') + '/**/*'],
+			release: ['./build/**/*']
 		},
 	  	nodewebkit: {
 		  	dev: {
 		  		options: {
-			      	platforms: ['osx'],
+			      	platforms: [grunt.option('p') || 'osx'],
 	      		  	macCredits: './src/credits.html',
 			      	buildDir: './build',
 			      	version: '0.8.4',
@@ -76,6 +77,6 @@ exports = module.exports = function (grunt) {
 		    },
 		}
 	});
-	grunt.registerTask('default', ['clean', 'nodewebkit:dev']);
-	grunt.registerTask('release', ['clean', 'nodewebkit:release', 'compress']);
+	grunt.registerTask('default', ['clean:dev', 'nodewebkit:dev']);
+	grunt.registerTask('release', ['clean:release', 'nodewebkit:release', 'compress']);
 };
