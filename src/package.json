@@ -4,13 +4,12 @@
   "description": "Home security app",
   "main": "index.html",
   "dependencies": {
-    "async": "^0.9.0",
-    "exec": "^0.1.2",
-    "moment": "^2.8.1"
+    "moment": "^2.8.1",
+    "pnger": "^0.2.x"
   },
   "window": {
     "title": "Homesec",
-    "toolbar": false,
+    "toolbar": true,
     "frame": true,
     "width": 800,
     "height": 380,

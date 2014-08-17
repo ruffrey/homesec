@@ -44,7 +44,7 @@ The build system dependencies are at the project root `./node_modules/`. The app
 
 All included software is copyrighted and protected by the respective developers.
 
-This project is licensed under the **MIT license**:
+This project is licensed under the **MIT license**, copyright (c) Jeff Parrish:
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

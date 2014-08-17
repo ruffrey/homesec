@@ -9,7 +9,7 @@
 		<script>
 		var fs = require('fs');
 		var moment = require('moment');
-		var pnger = require('./lib/pnger');
+		var pnger = require('pnger');
 
 		function init(callback) {
 			MediaStreamTrack.getSources(function (src) {
@@ -82,7 +82,11 @@
 			  	
 			  	// save it to the file system
 			  	
-				pnger(imageBuffer, saveFilePath, function (err) {
+				pnger({
+					buffer: imageBuffer,
+					output: saveFilePath
+				}, 
+				function pngSaveHandler(err) {
 					if (err) {
 						callback(err, null);
 						return;
