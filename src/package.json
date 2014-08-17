@@ -1,6 +1,6 @@
 {
   "name": "Homesec",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Home security app",
   "main": "index.html",
   "dependencies": {
