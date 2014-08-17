@@ -21,7 +21,7 @@ exports = module.exports = function (grunt) {
 			      	buildDir: './build',
 			      	version: '0.8.4',
 			      	macIcns: './src/lab.icns',
-			      	winIco: './src/lab.ico'
+			      	winIco: './src/lab.ico' // not supported when building on mac or linux without winehq.com
 			  	},
 		  		src: ['./src/**/*']
 		  	},

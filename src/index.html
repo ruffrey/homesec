@@ -9,64 +9,7 @@
 		<script>
 		var fs = require('fs');
 		var moment = require('moment');
-		var async = require('async');
-
-		var ExecBuffer = require('exec-buffer');
-		var pngquant = require('pngquant-bin').path;
-		var optipng = require('optipng-bin').path;
-
-		function compressPng(pngBuffer, pngPath, callback) {
-			var args_pngquant = [
-				'--quality', '70-98', // quality
-				'--speed', '5' // speed
-			];
-			// -out is destination, then source
-			var args_optipng = [
-				'-strip', 'all', 
-				'-quiet', 
-				'-clobber', 
-				'-o', 2 // optimizationLevel - https://github.com/kevva/imagemin-optipng#optimizationlevel
-			];
-
-			async.waterfall([
-				function minify(cb) {
-					console.debug('About to minify', args_pngquant);
-					var exec = new ExecBuffer();
-					exec
-		            .use(pngquant, args_pngquant.concat(['-f', '-o', exec.dest(), exec.src()]))
-		            .run(pngBuffer, function (err, buf) {
-		                if (err) {
-		                	console.error('minification error', err);
-		                    cb(err);
-		                    return;
-		                }
-
-		                pngBuffer = buf;
-		                cb();
-		            });
-				},
-				function optimize(cb) {
-					console.debug('About to optimize', args_optipng);
-					var exec = new ExecBuffer();
-					exec
-		            .use(optipng, args_optipng.concat(['-out', exec.dest(), exec.src()]))
-		            .run(pngBuffer, function (err, buf) {
-		                if (err) {
-		                	console.error('optimization error', err);
-		                    cb(err);
-		                    return;
-		                }
-
-		                pngBuffer = buf;
-		                cb();
-		            });
-				},
-				function makePngFile(cb) {
-					console.debug('About to write png', pngPath);
-					fs.writeFile(pngPath, pngBuffer, {encoding: 'base64'}, cb);
-				}
-			], callback);
-		}
+		var pnger = require('./lib/pnger');
 
 		function init(callback) {
 			MediaStreamTrack.getSources(function (src) {
@@ -139,7 +82,7 @@
 			  	
 			  	// save it to the file system
 			  	
-				compressPng(imageBuffer, saveFilePath, function (err) {
+				pnger(imageBuffer, saveFilePath, function (err) {
 					if (err) {
 						callback(err, null);
 						return;

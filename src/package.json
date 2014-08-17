@@ -5,10 +5,8 @@
   "main": "index.html",
   "dependencies": {
     "async": "^0.9.0",
-    "exec-buffer": "^1.0.0",
-    "moment": "^2.8.1",
-    "optipng-bin": "git+https://github.com/ruffrey/optipng-bin",
-    "pngquant-bin": "git+https://github.com/ruffrey/pngquant-bin"
+    "exec": "^0.1.2",
+    "moment": "^2.8.1"
   },
   "window": {
     "title": "Homesec",
