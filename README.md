@@ -22,9 +22,8 @@ or
 * `-p=linux32`
 * `-p=linux64`
 
-	grunt release
 
-Builds go into the `build/` folder.
+Builds always go into the `build/` folder.
 
 To build for all platforms:
 
