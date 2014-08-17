@@ -55,7 +55,7 @@
 		    });
 		}
 
-		function snapshot(saveFilePath, doTimestamp, callback) {
+		function snapshot(options, doTimestamp, callback) {
 			var video = document.getElementById('vid'); 
 
 			if (video.src) {
@@ -71,7 +71,7 @@
 
 			  	if (doTimestamp) {
 					ctx.fillStyle = "#ffffff";
-					ctx.font = "14px Tahoma";
+					ctx.font = "16px Tahoma";
 				  	ctx.fillText(moment().format('llll'), 10, 20);
 			  	}
 			  	
@@ -79,21 +79,19 @@
 				var canvasData = canvas.toDataURL('image/png');
 				var imageText = canvasData.split(',')[1]; // split off the beginning metadata
 			  	var imageBuffer = new Buffer(imageText, 'base64');
+
+			  	options.buffer = imageBuffer;
 			  	
 			  	// save it to the file system
 			  	
-				pnger({
-					buffer: imageBuffer,
-					output: saveFilePath
-				}, 
-				function pngSaveHandler(err) {
+				pnger(options, function pngSaveHandler(err) {
 					if (err) {
 						callback(err, null);
 						return;
 					}
 
 					document.getElementById('img').src = canvasData;
-  					callback(null, saveFilePath);
+  					callback(null, options.output);
   				});
 			}
 		} 
@@ -121,6 +119,10 @@
 			$scope.folderSize = "";
 			$scope.maxFolderBytes = localStorage.maxFolderBytes ? parseFloat(localStorage.maxFolderBytes) : 1024 * 1024 * 1024 * 20; // 20gb
 			$scope.proposedGb = ($scope.maxFolderBytes / 1024 / 1024 / 1024).toFixed(2);
+			$scope.speed = localStorage.speed || 5;
+			$scope.optimize = localStorage.optimize || 3;
+			$scope.qualityMin = localStorage.qualityMin || 60;
+			$scope.qualityMax = localStorage.qualityMax || 80;
 
 			function getReadableSize(inputBytes) {
 				var outText = "";
@@ -220,7 +222,12 @@
 			$scope.snap = function (callback) {
 				$scope.errMessage = "";
 				var saveFilePath = $scope.saveFolder + '/' + moment().format($scope.dateFormat) + '.png';
-				snapshot(saveFilePath, $scope.enableTimestamp, function (err, filepath) {
+				snapshot({
+					output: saveFilePath,
+					speed: $scope.speed,
+					optimize: $scope.optimize,
+					quality: $scope.qualityMin + '-' + $scope.qualityMax
+				}, $scope.enableTimestamp, function (err, filepath) {
 					if (err) {
 						console.error(err);
 						$scope.errMessage = err.message;
@@ -245,6 +252,19 @@
 			$scope.saveSnapInterval = function () {
 				localStorage.snapInterval = $scope.snapInterval;
 				$scope.message = "Snap interval changed to " + $scope.snapInterval + " miliseconds.";
+			};
+			$scope.saveSpeed = function () {
+				localStorage.speed = $scope.speed;
+				$scope.message = "Compression speed changed to " + $scope.speed + ".";
+			};
+			$scope.saveOptimize = function () {
+				localStorage.optimize = $scope.optimize;
+				$scope.message = "Image optimization level changed to " + $scope.optimize + ".";
+			};
+			$scope.saveQuality = function () {
+				localStorage.qualityMin = $scope.qualityMin;
+				localStorage.qualityMax = $scope.qualityMax;
+				$scope.message = "Image quality level range is now " + $scope.qualityMin + "% to " + $scope.qualityMax + "%.";
 			};
 			$scope.toggleSnapEnabled = function () {
 				$scope.autosnapEnabled = !$scope.autosnapEnabled;
@@ -384,6 +404,55 @@
 					<input class="form-control" type="text" ng-model="dateFormat" 
 						ng-disabled="autosnapEnabled"
 						ng-change="saveDateFormat()" value="" />
+				</div>
+			</div>
+			<div class="row" ng-show="settings">					
+				<br />
+				<div class="col-sm-4">
+					<label>Image quality</label>
+					
+					<div class="row">
+						<div class="col-sm-6">
+							<input type="range" step="1" min="1" max="{{ qualityMax }}"
+							 	ng-model="qualityMin"
+								ng-disabled="autosnapEnabled"
+								ng-change="saveQuality()" />
+						</div>
+						<div class="col-sm-6">
+							<input type="range" step="1" min="{{ qualityMin }}" max="100"
+							 	ng-model="qualityMax"
+								ng-disabled="autosnapEnabled"
+								ng-change="saveQuality()" />
+						</div>
+					</div>
+
+					<span class="help-block">
+						<span class="pull-left">min %</span>
+						<span class="pull-right">max %</span>
+					</span>
+					
+				</div>
+				<div class="col-sm-4">
+					<label>Compression speed</label>
+					<input type="range" step="1" min="1" max="10"
+					 	ng-model="speed"
+						ng-disabled="autosnapEnabled"
+						ng-change="saveSpeed()" />
+					<span class="help-block">
+						<span class="pull-left">slower</span>
+						<span class="pull-right">faster</span>
+					</span>
+				</div>
+				<div class="col-sm-4">
+					<label>Image optimization</label>
+					<input type="range" step="1" min="1" max="7"
+					 	ng-model="optimize"
+						ng-disabled="autosnapEnabled"
+						ng-change="saveOptimize()" />
+					<span class="help-block">
+						<span class="pull-left">faster / larger</span>
+						<span class="pull-right">slower / smaller</span>
+					</span>
 				</div>
 			</div>
 			<br />
