@@ -4,14 +4,10 @@ exports = module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-contrib-compress');
 	grunt.loadNpmTasks('grunt-contrib-clean');
 	var pkg = require('./src/package.json');
+	
 	grunt.initConfig({
 		clean: {
-			dev: [
-				'./build/Homesec-v' + pkg.version + '-MacOSX.zip', 
-				'./build/Homesec/osx/**/*',
-				'./build/Homesec/osx/'
-			],
-			release: ['./build/**/*']
+			files: ['./build/**/*']
 		},
 	  	nodewebkit: {
 		  	dev: {

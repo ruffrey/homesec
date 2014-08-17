@@ -12,7 +12,7 @@
 		var pnger = require('pnger');
 
 		function init(callback) {
-			MediaStreamTrack.getSources(function (src) {
+			MediaStreamTrack.getSources(function gettingMediaSources(src) {
 				var constraints = {
 					video: {
 						mandatory: {
@@ -141,7 +141,6 @@
 			$scope.autosnapEnabled = localStorage.autosnapEnabled === 'true' ? true : false;
 
 			var snapLooper = function () {
-				console.debug('snapLooper');
 				if ($scope.autosnapEnabled) {
 					$scope.snap();
 				} 
@@ -149,7 +148,6 @@
 			};
 
 			var cleanupLooper = function () {
-				console.debug('cleanupLooper');
 				if (!$scope.autosnapEnabled) {
 					$timeout(cleanupLooper, 4000);
 					return;
@@ -357,7 +355,8 @@
 				<br />
 				<div class="col-sm-4">
 					<label>Max folder size (gb)</label>
-					<input type="text" class="form-control" ng-model="proposedGb"
+					<input type="range" step="0.1" min="0.1" max="1024"
+					 	ng-model="proposedGb"
 						ng-disabled="autosnapEnabled"
 						ng-change="saveMaxFolderBytes()" />
 					<div class="checkbox">
@@ -371,7 +370,8 @@
 				</div>
 				<div class="col-sm-4">
 					<label>Snap interval (ms)</label>
-					<input class="form-control" type="text" ng-model="snapInterval" 
+					<input step="100" min="500" max="10000"
+						type="range" ng-model="snapInterval" 
 						ng-disabled="autosnapEnabled"
 						ng-change="saveSnapInterval()" value="" />
 				</div>
