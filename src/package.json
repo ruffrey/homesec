@@ -5,7 +5,7 @@
   "main": "index.html",
   "dependencies": {
     "moment": "^2.8.1",
-    "pnger": "^0.2.x"
+    "pnger": "^0.2.2"
   },
   "window": {
     "title": "Homesec",
