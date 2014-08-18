@@ -11,6 +11,19 @@
 		var moment = require('moment');
 		var pnger = require('pnger');
 
+		function getReadableSize(inputBytes) {
+			var outText = "";
+			var mb = 1024 * 1024;
+			var gb = mb * 1024;
+			if (inputBytes < gb) {
+				outText = (inputBytes / mb).toFixed(2) + "mb";
+			}
+			else {
+				outText = (inputBytes / gb).toFixed(2) + "gb";
+			}
+			return outText;
+		}
+
 		function init(callback) {
 			MediaStreamTrack.getSources(function gettingMediaSources(src) {
 				var constraints = {
@@ -55,7 +68,7 @@
 		    });
 		}
 
-		function snapshot(options, doTimestamp, callback) {
+		function snapshot(options, doPreview, doTimestamp, callback) {
 			var video = document.getElementById('vid'); 
 
 			if (video.src) {
@@ -90,9 +103,16 @@
 					}
   				});
 
-				document.getElementById('img').src = canvasData;
+  				// display the image, or clean it up.
+				var img = document.getElementById('img');
+				if (doPreview) {
+					img.src = canvasData;
+				}
+				else if (img.src) {
+					img.src = "";
+				}
+  				
   				callback(null, options.output);
-
 			}
 		} 
 
@@ -124,19 +144,6 @@
 			$scope.qualityMin = localStorage.qualityMin || 60;
 			$scope.qualityMax = localStorage.qualityMax || 80;
 
-			function getReadableSize(inputBytes) {
-				var outText = "";
-				var mb = 1024 * 1024;
-				var gb = mb * 1024;
-				if (inputBytes < gb) {
-					outText = (inputBytes / mb).toFixed(2) + "mb";
-				}
-				else {
-					outText = (inputBytes / gb).toFixed(2) + "gb";
-				}
-				return outText;
-			}
-
 			$scope.sources = [];
 
 			$scope.snapInterval = localStorage.snapInterval ? parseFloat(localStorage.snapInterval) : 5000;
@@ -150,21 +157,22 @@
 			};
 
 			var cleanupLooper = function () {
+				var cleanupInterval = 4000;
 				if (!$scope.autosnapEnabled) {
-					$timeout(cleanupLooper, 4000);
+					$timeout(cleanupLooper, cleanupInterval);
 					return;
 				}
 				if (!$scope.saveFolder || !fs.existsSync($scope.saveFolder)) {
 					$scope.errMessage = "Folder does not exist: " + $scope.saveFolder;
 					$scope.$apply();
-					$timeout(cleanupLooper, 4000);
+					$timeout(cleanupLooper, cleanupInterval);
 					return;
 				}
 
 				fs.readdir($scope.saveFolder, function (err, files) {
 					if (err) {
 						$scope.errMessage = err;
-						$timeout(cleanupLooper, 4000);
+						$timeout(cleanupLooper, cleanupInterval);
 						return;
 					}
 
@@ -201,7 +209,7 @@
 						}
 					}
 					$scope.folderSize = getReadableSize(bytes);
-					$timeout(cleanupLooper, 4000);
+					$timeout(cleanupLooper, cleanupInterval);
 				});
 			};
 
@@ -232,7 +240,7 @@
 					speed: $scope.speed,
 					optimize: $scope.optimize,
 					quality: $scope.qualityMin + '-' + $scope.qualityMax
-				}, $scope.enableTimestamp, function (err, filepath) {
+				}, $scope.preview, $scope.enableTimestamp, function (err, filepath) {
 					if (err) {
 						console.error(err);
 						$scope.errMessage = err.message;
@@ -472,9 +480,7 @@
 					<br />
 				</div>
 				<div class="col-sm-4">
-					<span class="help-block">Last photo</span>
-					<br />
-					<img id="img" class="img-responsive img-rounded" src="">
+					<img id="img" class="img-responsive img-rounded img-thumbnail" src="">
 				</div>
 			</div>
 			
