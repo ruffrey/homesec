@@ -157,7 +157,7 @@
 			};
 
 			var cleanupLooper = function () {
-				var cleanupInterval = 4000;
+				var cleanupInterval = 1000;
 				if (!$scope.autosnapEnabled) {
 					$timeout(cleanupLooper, cleanupInterval);
 					return;
