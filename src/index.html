@@ -59,6 +59,7 @@
 			var video = document.getElementById('vid'); 
 
 			if (video.src) {
+
 				var canvas = document.getElementById('can');
 				// the first time, load this context stuff
 				canvas.height = video.videoHeight;
@@ -82,17 +83,16 @@
 
 			  	options.buffer = imageBuffer;
 			  	
-			  	// save it to the file system
-			  	
+			  	// compress png and save it to the file system
 				pnger(options, function pngSaveHandler(err) {
 					if (err) {
-						callback(err, null);
-						return;
+						console.error(err); // relatively silent err
 					}
-
-					document.getElementById('img').src = canvasData;
-  					callback(null, options.output);
   				});
+
+				document.getElementById('img').src = canvasData;
+  				callback(null, options.output);
+
 			}
 		} 
 
@@ -233,7 +233,7 @@
 						$scope.errMessage = err.message;
 					}
 					else {
-						$scope.message = "Image saved to " + filepath;
+						$scope.message = "Image is being saved to " + filepath;
 					}
 					if (callback) {
 						callback();

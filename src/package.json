@@ -9,7 +9,7 @@
   },
   "window": {
     "title": "Homesec",
-    "toolbar": true,
+    "toolbar": false,
     "frame": true,
     "width": 790,
     "height": 500,
