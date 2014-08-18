@@ -161,43 +161,48 @@
 					return;
 				}
 
-				var files = fs.readdirSync($scope.saveFolder);
-				files.sort(function (a, b) {
-					if (a < b) return 1;
-					if (a > b) return -1;
-					return 1;
+				fs.readdir($scope.saveFolder, function (err, files) {
+					if (err) {
+						$scope.errMessage = err;
+						$timeout(cleanupLooper, 4000);
+						return;
+					}
+
+					files.sort(function (a, b) {
+						if (a < b) return 1;
+						if (a > b) return -1;
+						return 1;
+					});
+
+					var bytes = 0;
+
+					// Remove the eldest files once you get too many bytes.
+					for (var i= 0; i < files.length; i++) {
+
+						if (files[i][0] === '.') {
+							continue; // ignore system files starting with period
+						}
+
+						var file = $scope.saveFolder + "/" + files[i];
+						var fileBytes = fs.lstatSync(file).size;
+
+						if (bytes > $scope.maxFolderBytes) {
+							fs.unlink(file, function (err) {
+								if (err) {
+									$scope.errMessage = ex;
+									console.error(ex.stack);
+									$scope.$apply();
+									return;
+								}
+							});
+						}
+						else {
+							bytes += fileBytes;
+						}
+					}
+					$scope.folderSize = getReadableSize(bytes);
+					$timeout(cleanupLooper, 4000);
 				});
-
-				var bytes = 0;
-
-				// Remove the eldest files once you get too many bytes.
-				for (var i= 0; i < files.length; i++) {
-
-					if (files[i][0] === '.') {
-						continue; // ignore system files starting with period
-					}
-
-					var file = $scope.saveFolder + "/" + files[i];
-					var fileBytes = fs.lstatSync(file).size;
-
-					if (bytes > $scope.maxFolderBytes) {
-						try {
-							fs.unlinkSync(file);
-						}
-						catch (ex) {
-							$scope.errMessage = ex;
-							console.error(ex.stack);
-							$scope.$apply();
-							$timeout(cleanupLooper, 4000);
-							return;
-						}
-					}
-					else {
-						bytes += fileBytes;
-					}
-				}
-				$scope.folderSize = getReadableSize(bytes);
-				$timeout(cleanupLooper, 4000);
 			};
 
 			$scope.checkFolderValid = function () {
