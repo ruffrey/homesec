@@ -117,7 +117,7 @@
 		} 
 
 
-		function MainController($scope, $timeout) {
+		function MainController($scope, $timeout, $interval) {
 
 			init(function (err, sources) {
 				if (err) {
@@ -156,60 +156,89 @@
 				$timeout(snapLooper, $scope.snapInterval);
 			};
 
-			var cleanupLooper = function () {
-				var cleanupInterval = 1000;
-				if (!$scope.autosnapEnabled) {
-					$timeout(cleanupLooper, cleanupInterval);
-					return;
+			$scope.removalQueue = [];
+			var queueWorker = function () {
+				if ($scope.removalQueue.length) {
+					console.debug('queue', $scope.removalQueue);
+					$scope.removalQueue.forEach(function (file) {
+						fs.unlink($scope.saveFolder + "/" + file, function (err) {
+							if (err) {
+								$scope.errMessage = err;
+							}
+						});
+					});
+					$scope.removalQueue = [];
 				}
-				if (!$scope.saveFolder || !fs.existsSync($scope.saveFolder)) {
-					$scope.errMessage = "Folder does not exist: " + $scope.saveFolder;
-					$scope.$apply();
+			};
+			$interval(queueWorker, 2000);
+
+			var cleanupInterval = 6000;
+			var cleanupLooper = function () {
+				// only cleanup during snap enabled
+				if (!$scope.autosnapEnabled || !$scope.saveFolder) {
 					$timeout(cleanupLooper, cleanupInterval);
 					return;
 				}
 
-				fs.readdir($scope.saveFolder, function (err, files) {
-					if (err) {
-						$scope.errMessage = err;
+				fs.exists($scope.saveFolder, function (exists) {
+					if (!exists) {
+						$scope.errMessage = "Folder does not exist: " + $scope.saveFolder;
 						$timeout(cleanupLooper, cleanupInterval);
 						return;
 					}
 
-					files.sort(function (a, b) {
-						if (a < b) return 1;
-						if (a > b) return -1;
-						return 1;
-					});
-
-					var bytes = 0;
-
-					// Remove the eldest files once you get too many bytes.
-					for (var i= 0; i < files.length; i++) {
-
-						if (files[i][0] === '.') {
-							continue; // ignore system files starting with period
+					fs.readdir($scope.saveFolder, function (err, files) {
+						if (err) {
+							$scope.errMessage = err;
+							$timeout(cleanupLooper, cleanupInterval);
+							return;
 						}
 
-						var file = $scope.saveFolder + "/" + files[i];
-						var fileBytes = fs.lstatSync(file).size;
+						// newest files at the beginning of the array
+						files.sort(function (a, b) {
+							if (a < b) return -1;
+							if (a > b) return 1;
+							return 0;
+						});
 
-						if (bytes > $scope.maxFolderBytes) {
-							fs.unlink(file, function (err) {
+						// recursively read the files and once we reach the max bytes, remove all the others.
+						var bytes = 0;
+						var readFile = function (_file) {
+							if (_file[0] === '.') {
+								if (files.length) {
+									readFile(files.pop());
+								}
+								return;
+							}
+							fs.lstat($scope.saveFolder + "/" + _file, function (err, stats) {
 								if (err) {
-									$scope.errMessage = ex;
-									console.error(ex.stack);
-									$scope.$apply();
+									console.error(err);
+									if (files.length) {
+										readFile(files.pop());
+									}
 									return;
 								}
+								bytes += stats.size;
+
+								if (bytes > $scope.maxFolderBytes) {
+									$scope.removalQueue.push(_file);
+									$scope.removalQueue = $scope.removalQueue.concat(files);
+									bytes -= stats.size;
+									return;
+								}
+								if (files.length) {
+									readFile(files.pop());
+								}
+								else {
+									$scope.folderSize = getReadableSize(bytes);
+								}
 							});
-						}
-						else {
-							bytes += fileBytes;
-						}
-					}
-					$scope.folderSize = getReadableSize(bytes);
-					$timeout(cleanupLooper, cleanupInterval);
+						};
+						
+						readFile(files.pop());
+						$timeout(cleanupLooper, cleanupInterval);
+					});
+
 				});
 			};
 
@@ -315,7 +344,7 @@
 
 
 			snapLooper();
-			cleanupLooper();
+			$timeout(cleanupLooper, 4000);
 		}
  
 		</script>

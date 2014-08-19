@@ -13,7 +13,7 @@
     "frame": true,
     "width": 790,
     "height": 500,
-    "position": "mouse",
+    "position": "center",
     "min_width": 790,
     "min_height": 280
   },
