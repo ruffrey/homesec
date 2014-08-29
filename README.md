@@ -2,7 +2,7 @@
 
 [Get started by reading the wiki](https://github.com/ruffrey/homesec/wiki)
 
-![screenshot of homesec](http://i.imgur.com/YsnPkd5.png)
+![screenshot of homesec](http://i.imgur.com/nNuwsDE.png)
 
 ## Development
 
