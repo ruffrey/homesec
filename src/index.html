@@ -97,11 +97,20 @@
 			  	options.buffer = imageBuffer;
 			  	
 			  	// compress png and save it to the file system
-				pnger(options, function pngSaveHandler(err) {
-					if (err) {
-						console.error(err); // relatively silent err
-					}
-  				});
+			  	if (options.enablePnger) {
+			  		pnger(options, function pngSaveHandler(err) {
+						if (err) {
+							console.error(err); // relatively silent err
+						}
+	  				});
+			  	}
+			  	else {
+			  		fs.writeFile(options.output, options.buffer, function saveFileHandler(err) {
+			  			if (err) {
+			  				console.error(err);
+			  			}
+			  		})
+			  	}
 
   				// display the image, or clean it up.
 				var img = document.getElementById('img');
@@ -136,6 +145,7 @@
 			$scope.message = "";
 			$scope.sourceId = localStorage.sourceId || null;
 			$scope.enableTimestamp = localStorage.enableTimestamp === 'false' ? false : true;
+			$scope.enablePnger = localStorage.enablePnger === 'false' ? false : true;
 			$scope.folderSize = "";
 			$scope.maxFolderBytes = localStorage.maxFolderBytes ? parseFloat(localStorage.maxFolderBytes) : 1024 * 1024 * 1024 * 20; // 20gb
 			$scope.proposedGb = ($scope.maxFolderBytes / 1024 / 1024 / 1024).toFixed(2);
@@ -153,13 +163,13 @@
 				if ($scope.autosnapEnabled) {
 					$scope.snap();
 				} 
-				$timeout(snapLooper, $scope.snapInterval);
+				// $timeout(snapLooper, $scope.snapInterval);
 			};
 
 			$scope.removalQueue = [];
 			var queueWorker = function () {
 				if ($scope.removalQueue.length) {
-					console.debug('queue', $scope.removalQueue);
+					// console.debug('queue', $scope.removalQueue);
 					$scope.removalQueue.forEach(function (file) {
 						fs.unlink($scope.saveFolder + "/" + file, function (err) {
 							if (err) {
@@ -170,27 +180,23 @@
 					$scope.removalQueue = [];
 				}
 			};
-			$interval(queueWorker, 2000);
 
-			var cleanupInterval = 6000;
+			var cleanupInterval = 5000;
 			var cleanupLooper = function () {
 				// only cleanup during snap enabled
 				if (!$scope.autosnapEnabled || !$scope.saveFolder) {
-					$timeout(cleanupLooper, cleanupInterval);
 					return;
 				}
 
 				fs.exists($scope.saveFolder, function (exists) {
 					if (!exists) {
 						$scope.errMessage = "Folder does not exist: " + $scope.saveFolder;
-						$timeout(cleanupLooper, cleanupInterval);
 						return;
 					}
 
 					fs.readdir($scope.saveFolder, function (err, files) {
 						if (err) {
 							$scope.errMessage = err;
-							$timeout(cleanupLooper, cleanupInterval);
 							return;
 						}
 
@@ -224,8 +230,10 @@
 									$scope.removalQueue.push(_file);
 									$scope.removalQueue = $scope.removalQueue.concat(files);
 									bytes -= stats.size;
+									$scope.folderSize = getReadableSize(bytes);
 									return;
 								}
+
 								if (files.length) {
 									readFile(files.pop());
 								}
@@ -236,7 +244,6 @@
 						};
 						
 						readFile(files.pop());
-						$timeout(cleanupLooper, cleanupInterval);
 					});
 
 				});
@@ -265,6 +272,7 @@
 				$scope.errMessage = "";
 				var saveFilePath = $scope.saveFolder + '/' + moment().format($scope.dateFormat) + '.png';
 				snapshot({
+					enablePnger: $scope.enablePnger,
 					output: saveFilePath,
 					speed: $scope.speed,
 					optimize: $scope.optimize,
@@ -322,6 +330,10 @@
 				localStorage.enableTimestamp = $scope.enableTimestamp;
 				$scope.message = "Image timestamp " + ($scope.enableTimestamp ? "enabled" : "disabled") + ".";
 			};
+			$scope.saveEnablePnger = function () {
+				localStorage.enablePnger = $scope.enablePnger;
+				$scope.message = "Image size reduction " + ($scope.enablePnger ? "enabled" : "disabled") + ".";
+			};
 			$scope.saveMaxFolderBytes = function () {
 				// $scope.proposedGb
 				if (isNaN($scope.proposedGb)) {
@@ -343,8 +355,9 @@
 			
 
 
-			snapLooper();
-			$timeout(cleanupLooper, 4000);
+			$interval(queueWorker, 2000);
+			$interval(snapLooper, $scope.snapInterval);
+			$interval(cleanupLooper, cleanupInterval);
 		}
  
 		</script>
@@ -356,41 +369,34 @@
 			<div class="row">
 				<div class="col-sm-4">
 					<div class="btn-group">
-						<button type="checkbox" class="btn btn-default btn-lg"
-							ng-class="{ bold: !autosnapEnabled }"
-							ng-disabled="!autosnapEnabled" 
+						<span class="fa fa-toggle-off fa-4x"
+							ng-show="!autosnapEnabled" 
 							ng-click="toggleSnapEnabled()">
-							OFF
-							<span ng-show="!autosnapEnabled">
-								<i class="fa fa-check-circle"></i>
 							</span>
-						</button>
-						<button type="checkbox" class="btn btn-default btn-lg"
-							ng-class="{ bold: autosnapEnabled }"
-							ng-disabled="autosnapEnabled" 
-							ng-click="toggleSnapEnabled()">
-							ON
-							<span ng-show="autosnapEnabled">
-								<i class="fa fa-check-circle"></i>
-							</span>
-						</button>
+						<span class="fa fa-toggle-on fa-4x"
+							ng-show="autosnapEnabled" 
+							ng-click="toggleSnapEnabled()"></span>
+						
+						&nbsp;&nbsp;
+						
+						<label>{{ autosnapEnabled ? "ON" : "OFF" }}</label>
 					</div>
 
 					<br />
 					<br />
-					<button class="btn btn-default btn-sm" ng-class="{active:settings}" ng-click="settings = !settings; preview = false;">
-						<i class="fa fa-cogs"></i>
-						&nbsp;
-						Settings
-					</button>
-					<br />
-					<br />
-					<button class="btn btn-default btn-sm" ng-class="{active:preview}" 
-						ng-click="preview = !preview; settings = false;">
-						<i class="fa fa-camera"></i>
-						&nbsp;
-						Preview
-					</button>
+					<div class="btn-group">
+						<button class="btn btn-default btn-sm" ng-class="{active:settings}" ng-click="settings = !settings; preview = false;">
+							<i class="fa fa-cogs"></i>
+							<br />
+							Settings
+						</button>
+						<button class="btn btn-default btn-sm" ng-class="{active:preview}" 
+							ng-click="preview = !preview; settings = false;">
+							<i class="fa fa-camera"></i>
+							<br />
+							Preview
+						</button>
+					</div>
 				</div>
 				<div class="col-sm-8">
 					<select class="form-control" ng-model="sourceId" ng-change="setSource()">
@@ -403,7 +409,7 @@
 					<br />
 
 					<label>
-						Save folder path
+						Save images to folder:
 					</label>
 					<input class="form-control" type="text" ng-model="saveFolder" 
 						ng-disabled="autosnapEnabled"
@@ -475,21 +481,30 @@
 					
 				</div>
 				<div class="col-sm-4">
+					<div class="checkbox">
+						<label>
+							<input type="checkbox" ng-model="enablePnger" 
+								ng-disabled="autosnapEnabled"
+								ng-change="saveEnablePnger()" value="" />
+								Reduce image sizes<br />(fast CPU highly recommended)
+						</label>
+					</div>
+				</div>
+				<div class="col-sm-4">
 					<label>Compression speed</label>
 					<input type="range" step="1" min="1" max="10"
 					 	ng-model="speed"
-						ng-disabled="autosnapEnabled"
+						ng-disabled="autosnapEnabled || !enablePnger"
 						ng-change="saveSpeed()" />
 					<span class="help-block">
-						<span class="pull-left">slower</span>
-						<span class="pull-right">faster</span>
+						<span class="pull-left">slower / smaller</span>
+						<span class="pull-right">faster / larger</span>
 					</span>
-				</div>
-				<div class="col-sm-4">
+
 					<label>Image optimization</label>
 					<input type="range" step="1" min="1" max="7"
 					 	ng-model="optimize"
-						ng-disabled="autosnapEnabled"
+						ng-disabled="autosnapEnabled || !enablePnger"
 						ng-change="saveOptimize()" />
 					<span class="help-block">
 						<span class="pull-left">faster / larger</span>
@@ -509,7 +524,7 @@
 					<br />
 				</div>
 				<div class="col-sm-4">
-					<img id="img" class="img-responsive img-rounded img-thumbnail" src="">
+					<img id="img" class="img-responsive img-rounded" src="">
 				</div>
 			</div>
 			
