@@ -6,7 +6,11 @@
 
 ## Development
 
-Requires [Git](http://git-scm.org) [Node](http://nodejs.org) and [Grunt CLI](http://gruntjs.com).
+Requires:
+
+- [Git](http://git-scm.org)
+- [Node](http://nodejs.org)
+- [Grunt CLI](http://gruntjs.com)  `npm install -g grunt-cli`
 
 	git clone https://github.com/ruffrey/homesec
 	cd homesec
