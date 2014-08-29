@@ -12,6 +12,7 @@ Requires:
 - [Node](http://nodejs.org)
 - [Grunt CLI](http://gruntjs.com)  `npm install -g grunt-cli`
 
+Then:
 	git clone https://github.com/ruffrey/homesec
 	cd homesec
 
